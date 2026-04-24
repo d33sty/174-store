@@ -1,4 +1,299 @@
-# Virtual environment
-venv/
+# ===================
+# Python
+# ===================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+.ruff_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# pytype
+.pytype/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Environments
+.env
+.venv
 env/
-.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+
+# ===================
+# IDEs and Editors
+# ===================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+.ipr
+.idea_modules/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+.sublime/
+
+# Vim
+*.swp
+*.swo
+*~
+.~*
+.*.swp
+.*.swo
+*.un~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===================
+# Operating System
+# ===================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+*.swp
+*~
+.fseventsd
+.SourceGuardian
+
+# Linux
+*~
+.directory
+*.pid
+*.lock
+*.socket
+
+# ===================
+# Databases
+# ===================
+
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ===================
+# Logs and Temporary files
+# ===================
+
+*.log
+*.tmp
+*.temp
+*.bak
+*.cache
+*.cached
+*.dump
+
+# ===================
+# Project specific
+# ===================
+
+# Docker
+.dockerignore
+*.tar.gz
+*.tar
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.secret
+secrets/
+credentials/
+
+# Local configuration
+config.local.*
+*.local.py
+settings_local.py
+
+# API keys and tokens
+.env.*
+.env.local
+
+# Backups
+*.backup
+*.old
+*.orig
+
+# ===================
+# Frontend (если есть)
+# ===================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+out/
+
+# ===================
+# FastAPI specific
+# ===================
+
+# FastAPI caching
+__pycache__/
+*.pyc
+
+# Uvicorn logs
+uvicorn.log
+
+# ===================
+# Celery
+# ===================
+
+celerybeat-schedule
+celerybeat.pid
+
+# ===================
+# Jupyter
+# ===================
+
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# ===================
+# Testing
+# ===================
+
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+.tox
+.mypy_cache/
+.ruff_cache/
+
+# ===================
+# Documentation
+# ===================
+
+docs/_build/
+site/
+
+# ===================
+# Miscellaneous
+# ===================
+
+*.pid
+*.seed
+*.pid.lock
+*.sock
+*.socket
+*.gem
+*.rbc
+*.pyc
+*.exe
+*.dll
+*.so
+*.o
+*.a
+*.obj
+*.lib
+*.out
+*.app

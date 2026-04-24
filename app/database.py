@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase  # New
+from sqlalchemy import Column, Integer, String, Float
 
 
 # Строка подключения для SQLite
@@ -13,5 +14,5 @@ SessionLocal = sessionmaker(bind=engine)
 
 
 # Определяем базовый класс для моделей
-class Base(DeclarativeBase):  # New
+class Base(DeclarativeBase):
     pass
