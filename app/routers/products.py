@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
@@ -9,7 +10,7 @@ from app.schemas import (
     ProductCreate as ProductRequestSchema,
 )
 from app.db_depends import get_db
-
+from app.db_depends import get_async_db
 
 # Создаём маршрутизатор для товаров
 router = APIRouter(
@@ -22,21 +23,22 @@ router = APIRouter(
     "/", response_model=list[ProductResponseSchema], status_code=status.HTTP_200_OK
 )
 async def get_all_products(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> list[ProductResponseSchema]:
     """
     Возвращает список всех товаров.
     """
     stmt = select(ProductModel).where(ProductModel.is_active == True)
-    products = db.scalars(stmt).all()
-    return products
+    db_products_result = await db.scalars(stmt)
+    db_products = db_products_result.all()
+    return db_products
 
 
 @router.post(
     "/", response_model=ProductResponseSchema, status_code=status.HTTP_201_CREATED
 )
 async def create_product(
-    product: ProductRequestSchema, db: Session = Depends(get_db)
+    product: ProductRequestSchema, db: AsyncSession = Depends(get_async_db)
 ) -> ProductResponseSchema:
     """
     Создаёт новый товар.
@@ -44,15 +46,17 @@ async def create_product(
     stmt = select(CategoryModel).where(
         CategoryModel.id == product.category_id, CategoryModel.is_active == True
     )
-    if db.scalars(stmt).first() is None:
+    db_category_result = await db.scalars(stmt)
+    db_category = db_category_result.first()
+    if db_category is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
         )
 
     db_product = ProductModel(**product.model_dump())
     db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
     return db_product
 
 
@@ -62,7 +66,7 @@ async def create_product(
     status_code=status.HTTP_200_OK,
 )
 async def get_products_by_category(
-    category_id: int, db: Session = Depends(get_db)
+    category_id: int, db: AsyncSession = Depends(get_async_db)
 ) -> list[ProductResponseSchema]:
     """
     Возвращает список товаров в указанной категории по её ID.
@@ -70,7 +74,9 @@ async def get_products_by_category(
     stmt = select(CategoryModel).where(
         CategoryModel.id == category_id, CategoryModel.is_active == True
     )
-    if db.scalars(stmt).first() is None:
+    db_category_result = await db.scalars(stmt)
+    db_category = db_category_result.first()
+    if db_category is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
         )
@@ -78,8 +84,9 @@ async def get_products_by_category(
     stmt = select(ProductModel).where(
         ProductModel.is_active == True, ProductModel.category_id == category_id
     )
-    products = db.scalars(stmt).all()
-    return products
+    db_products_result = await db.scalars(stmt)
+    db_products = db_products_result.all()
+    return db_products
 
 
 @router.get(
@@ -88,7 +95,7 @@ async def get_products_by_category(
     status_code=status.HTTP_200_OK,
 )
 async def get_product(
-    product_id: int, db: Session = Depends(get_db)
+    product_id: int, db: AsyncSession = Depends(get_async_db)
 ) -> ProductResponseSchema:
     """
     Возвращает детальную информацию о товаре по его ID.
@@ -96,8 +103,9 @@ async def get_product(
     stmt = select(ProductModel).where(
         ProductModel.is_active == True, ProductModel.id == product_id
     )
-    db_product = db.scalars(stmt).first()
-    if db.scalars(stmt).first() is None:
+    db_product_result = await db.scalars(stmt)
+    db_product = db_product_result.first()
+    if db_product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
@@ -111,7 +119,9 @@ async def get_product(
     status_code=status.HTTP_200_OK,
 )
 async def update_product(
-    product_id: int, product: ProductRequestSchema, db: Session = Depends(get_db)
+    product_id: int,
+    product: ProductRequestSchema,
+    db: AsyncSession = Depends(get_async_db),
 ) -> ProductResponseSchema:
     """
     Обновляет товар по его ID.
@@ -119,7 +129,8 @@ async def update_product(
     stmt = select(ProductModel).where(
         ProductModel.is_active == True, ProductModel.id == product_id
     )
-    db_product = db.scalars(stmt).first()
+    db_product_result = await db.scalars(stmt)
+    db_product = db_product_result.first()
     if db_product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
@@ -128,39 +139,49 @@ async def update_product(
     stmt = select(CategoryModel).where(
         CategoryModel.id == product.category_id, CategoryModel.is_active == True
     )
-    if db.scalars(stmt).first() is None:
+    db_category_result = await db.scalars(stmt)
+    db_category = db_category_result.first()
+    if db_category is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
         )
 
-    db.execute(
+    await db.execute(
         update(ProductModel)
         .where(ProductModel.id == product_id)
         .values(**product.model_dump())
     )
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
     return db_product
 
 
-@router.delete("/{product_id}", response_model=dict, status_code=status.HTTP_200_OK)
-async def delete_product(product_id: int, db: Session = Depends(get_db)) -> dict:
+@router.delete(
+    "/{product_id}",
+    response_model=ProductResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+async def delete_product(
+    product_id: int, db: AsyncSession = Depends(get_async_db)
+) -> ProductResponseSchema:
     """
     Логически удаляет товар по его ID, устанавливая is_active=False.
     """
     stmt = select(ProductModel).where(
         ProductModel.is_active == True, ProductModel.id == product_id
     )
-    db_product = db.scalars(stmt).first()
+    db_product_result = await db.scalars(stmt)
+    db_product = db_product_result.first()
     if db_product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
-    db.execute(
+    await db.execute(
         update(ProductModel)
         .where(ProductModel.id == product_id)
         .values(is_active=False)
     )
-    db.commit()
+    await db.commit()
+    await db.refresh(db_product)
 
-    return {"status": "success", "message": "Product marked as inactive"}
+    return db_product

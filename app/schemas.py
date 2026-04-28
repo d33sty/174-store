@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
+from sqlalchemy import Numeric
 from decimal import Decimal
 
 
@@ -72,7 +73,7 @@ class Product(BaseModel):
     name: str = Field(..., description="Название товара")
     description: str | None = Field(None, description="Описание товара")
     price: Decimal = Field(
-        ..., description="Цена товара в рублях", gt=0, decimal_places=2
+        Numeric(10, 2), description="Цена товара в рублях", gt=0, decimal_places=2
     )
     image_url: str | None = Field(None, description="URL изображения товара")
     stock: int = Field(..., description="Количество товара на складе")
