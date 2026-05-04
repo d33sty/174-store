@@ -4,7 +4,7 @@
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0.49-red.svg)](https://www.sqlalchemy.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue.svg)](https://www.postgresql.org/)
 [![Alembic](https://img.shields.io/badge/Alembic-1.18.4-purple.svg)](https://alembic.sqlalchemy.org/)
-[![JWT](https://img.shields.io/badge/JWT-PyJWT-2.12.1-orange.svg)](https://pyjwt.readthedocs.io/)
+[![PyJWT](https://img.shields.io/pypi/v/pyjwt?label=PyJWT&logo=jsonwebtokens)](https://pypi.org/project/pyjwt/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **REST API для интернет-магазина** с системой отзывов, рейтингов и JWT-аутентификацией.
@@ -63,7 +63,7 @@
 ├── alembic.ini
 ├── requirements.txt
 └── README.md
-```end
+```
 
 ## 🛠 Установка и запуск
 
@@ -79,7 +79,7 @@
 ```bash
 git clone https://github.com/d33sty/174-store.git
 cd 174-store
-```end
+```
 
 #### 2. Создание виртуального окружения
 
@@ -87,20 +87,20 @@ cd 174-store
 python -m venv venv
 source venv/bin/activate      # Linux/Mac
 venv\Scripts\activate         # Windows
-```end
+```
 
 #### 3. Установка зависимостей
 
 ```bash
 pip install -r requirements.txt
-```end
+```
 
 #### 4. Настройка переменных окружения
 
 ```bash
 cp .env.example .env
 # Отредактируйте .env, укажите ваши данные
-```end
+```
 
 Пример .env:
 
@@ -110,7 +110,7 @@ SECRET_KEY=your-secret-key-here-please-change-it
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
-```end
+```
 
 #### 5. Запуск PostgreSQL (пример с Docker)
 
@@ -122,19 +122,19 @@ docker run -d \
   -e POSTGRES_DB=store_db \
   -p 5432:5432 \
   postgres:15
-```end
+```
 
 #### 6. Применение миграций
 
 ```bash
 alembic upgrade head
-```end
+```
 
 #### 7. Запуск приложения
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```end
+```
 
 #### 8. Открыть документацию
 
@@ -198,7 +198,7 @@ POST /users/token
 Content-Type: application/x-www-form-urlencoded
 
 username=user@example.com&password=yourpassword
-```end
+```
 
 ### Ответ
 
@@ -208,14 +208,14 @@ username=user@example.com&password=yourpassword
   "refresh_token": "eyJ...",
   "token_type": "bearer"
 }
-```end
+```
 
 ### Использование токена
 
 ```bash
 GET /users/me
 Authorization: Bearer eyJ...
-```end
+```
 
 ### Обновление токена
 
@@ -226,7 +226,7 @@ Content-Type: application/json
 {
   "refresh_token": "eyJ..."
 }
-```end
+```
 
 ## 📡 API Эндпоинты
 
@@ -291,7 +291,7 @@ curl -X POST http://localhost:8000/users/ \
     "password": "securepassword",
     "role": "buyer"
   }'
-```end
+```
 
 ### Регистрация продавца
 
@@ -303,7 +303,7 @@ curl -X POST http://localhost:8000/users/ \
     "password": "securepassword",
     "role": "seller"
   }'
-```end
+```
 
 ### Логин и получение токена
 
@@ -311,7 +311,7 @@ curl -X POST http://localhost:8000/users/ \
 curl -X POST http://localhost:8000/users/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=buyer@example.com&password=securepassword"
-```end
+```
 
 ### Создание категории (только admin)
 
@@ -322,7 +322,7 @@ curl -X POST http://localhost:8000/categories/ \
   -d '{
     "name": "Веники"
   }'
-```end
+```
 
 ### Создание товара (только seller)
 
@@ -337,13 +337,13 @@ curl -X POST http://localhost:8000/products/ \
     "stock": 100,
     "category_id": 1
   }'
-```end
+```
 
 ### Получение списка товаров
 
 ```bash
 curl -X GET http://localhost:8000/products/
-```end
+```
 
 ### Оставление отзыва (только buyer)
 
@@ -356,14 +356,14 @@ curl -X POST http://localhost:8000/reviews/ \
     "grade": 5,
     "comment": "Отличный веник, очень душистый!"
   }'
-```end
+```
 
 ### Удаление отзыва (автор или admin)
 
 ```bash
 curl -X DELETE http://localhost:8000/reviews/reviews/1 \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```end
+```
 
 ## 🔒 Права доступа
 
@@ -379,7 +379,7 @@ curl -X DELETE http://localhost:8000/reviews/reviews/1 \
 
 ```bash
 pip install -r requirements.txt
-```end
+```
 
 Основные зависимости проекта:
 - FastAPI

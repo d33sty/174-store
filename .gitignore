@@ -65,16 +65,6 @@ dmypy.json
 .ipynb_checkpoints
 *.ipynb
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-pythonenv*
-
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -206,17 +196,13 @@ config.local.*
 *.local.py
 settings_local.py
 
-# API keys and tokens
-.env.*
-.env.local
-
 # Backups
 *.backup
 *.old
 *.orig
 
 # ===================
-# Frontend (если есть)
+# Frontend
 # ===================
 
 # Node.js
@@ -297,3 +283,17 @@ site/
 *.lib
 *.out
 *.app
+
+# ===================
+# Environment files
+# ===================
+
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+
+!.env.example
+!.env.sample
+!.env.template
