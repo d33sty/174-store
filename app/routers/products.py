@@ -5,9 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
+from app.models.reviews import Review as ReviewModel
 from app.schemas import (
     Product as ProductResponseSchema,
     ProductCreate as ProductRequestSchema,
+    Review as ReviewResponseSchema,
 )
 from app.db_depends import get_db
 from app.db_depends import get_async_db
@@ -196,3 +198,20 @@ async def delete_product(
     await db.commit()
     await db.refresh(product)  # Для возврата is_active = False
     return product
+
+
+@router.get(
+    "/{product_id}/reviews/",
+    response_model=list[ReviewResponseSchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_reviews_by_product_id(
+    product_id: int, db: AsyncSession = Depends(get_async_db)
+) -> list[ReviewResponseSchema]:
+    """Возвращает список всех отзывов на указанный товар"""
+    stmt = select(ReviewModel).where(
+        ReviewModel.is_active == True, ReviewModel.product_id == product_id
+    )
+    db_reviews_result = await db.scalars(stmt)
+    db_reviews = db_reviews_result.all()
+    return db_reviews

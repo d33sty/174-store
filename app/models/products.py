@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.models.categories import Category
     from app.models.users import User
+    from app.models.reviews import Review
 
 
 class Product(Base):
@@ -25,6 +26,8 @@ class Product(Base):
         ForeignKey("categories.id"), nullable=False
     )
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    rating: Mapped[Decimal] = mapped_column(Numeric(3, 2), default=Decimal(0))
 
     category: Mapped["Category"] = relationship("Category", back_populates="products")
     seller: Mapped["User"] = relationship("User", back_populates="products")
+    reviews: Mapped[list["Review"]] = relationship("Review", back_populates="product")

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from sqlalchemy import Numeric
 from decimal import Decimal
+from datetime import datetime
 
 
 class CategoryCreate(BaseModel):
@@ -78,6 +79,7 @@ class Product(BaseModel):
     image_url: str | None = Field(None, description="URL изображения товара")
     stock: int = Field(..., description="Количество товара на складе")
     category_id: int = Field(..., description="ID категории")
+    rating: Decimal = Field(Numeric(3, 2), description="Рейтинг товара")
     is_active: bool = Field(..., description="Активность товара")
 
     model_config = ConfigDict(from_attributes=True)
@@ -108,4 +110,34 @@ class User(BaseModel):
     email: EmailStr
     is_active: bool
     role: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RefreshTokenRequest(BaseModel):
+    """
+    Модель для refresh-токена
+    """
+
+    refresh_token: str
+
+
+class ReviewCreate(BaseModel):
+    product_id: int = Field(
+        ..., descriprion="Уникальный идентификатор товара, на который оставлен отзыв"
+    )
+    comment: str | None = Field(descriprion="Комментарий к отзыву")
+    grade: int = Field(..., ge=1, le=5, description="Оценка товара")
+
+
+class Review(BaseModel):
+    id: int = Field(..., descriprion="Уникальный идентификатор отзыва")
+    user_id: int = Field(..., descriprion="Уникальный идентификатор автора отзыва")
+    product_id: int = Field(
+        ..., descriprion="Уникальный идентификатор товара, на который оставлен отзыв"
+    )
+    comment: str | None = Field(descriprion="Комментарий к отзыву")
+    comment_date: datetime = Field(..., descriprion="Дата отзыва")
+    grade: int = Field(..., ge=1, le=5, description="Оценка товара")
+    is_active: bool = Field(default=True, description="Активность отзыва")
+
     model_config = ConfigDict(from_attributes=True)

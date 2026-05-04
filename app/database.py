@@ -2,7 +2,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy import Column, Integer, String, Float
 
-
 # Строка подключения для SQLite
 DATABASE_URL = "sqlite:///ecommerce.db"
 
