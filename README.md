@@ -105,11 +105,12 @@ cp .env.example .env
 Пример .env:
 
 ```env
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/store_db
-SECRET_KEY=your-secret-key-here-please-change-it
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
+SECRET_KEY=8666745e8cbc35b51f9ea08f5bc42994794d0a6dc5aafaa205fc2485a9b1580c
+DB_USER=db_user
+DB_PASS=password
+DB_HOST=localhost
+DB_PORT=5434
+DB_NAME=name_db
 ```
 
 #### 5. Запуск PostgreSQL (пример с Docker)
