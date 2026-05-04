@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, update
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import select, update, func
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +10,7 @@ from app.schemas import (
     Product as ProductResponseSchema,
     ProductCreate as ProductRequestSchema,
     Review as ReviewResponseSchema,
+    ProductList,
 )
 from app.db_depends import get_db
 from app.db_depends import get_async_db
@@ -24,19 +25,36 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/", response_model=list[ProductResponseSchema], status_code=status.HTTP_200_OK
-)
+@router.get("/", response_model=ProductList)
 async def get_all_products(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_async_db),
-) -> list[ProductResponseSchema]:
+):
     """
-    Возвращает список всех товаров.
+    Возвращает список всех активных товаров.
     """
-    stmt = select(ProductModel).where(ProductModel.is_active == True)
-    db_products_result = await db.scalars(stmt)
-    db_products = db_products_result.all()
-    return db_products
+    total_stmt = (
+        select(func.count())
+        .select_from(ProductModel)
+        .where(ProductModel.is_active == True)
+    )
+    total = await db.scalar(total_stmt) or 0
+
+    products_stmt = (
+        select(ProductModel)
+        .where(ProductModel.is_active == True)
+        .order_by(ProductModel.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    items = (await db.scalars(products_stmt)).all()
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
 
 
 @router.post(
