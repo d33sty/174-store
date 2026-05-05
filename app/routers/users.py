@@ -20,28 +20,25 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.post("/", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db)):
     """
-    Регистрирует нового пользователя с ролью 'buyer' или 'seller'.
+    Регистрирует нового пользователя.
     """
 
-    # Проверка уникальности email
     result = await db.scalars(select(UserModel).where(UserModel.email == user.email))
     if result.first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
         )
 
-    # Создание объекта пользователя с хешированным паролем
     db_user = UserModel(
         email=user.email, hashed_password=hash_password(user.password), role=user.role
     )
 
-    # Добавление в сессию и сохранение в базе
     db.add(db_user)
     await db.commit()
     return db_user
 
 
-@router.post("/token")  # New
+@router.post("/token")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_async_db),

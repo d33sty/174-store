@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from sqlalchemy import Numeric
 from decimal import Decimal
 from datetime import datetime
 
@@ -17,7 +16,7 @@ class CategoryCreate(BaseModel):
         description="Название категории (3-50 символов)",
     )
     parent_id: int | None = Field(
-        None, description="ID родительской категории, если есть"
+        default=None, description="ID родительской категории, если есть"
     )
 
 
@@ -73,13 +72,11 @@ class Product(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор товара")
     name: str = Field(..., description="Название товара")
     description: str | None = Field(None, description="Описание товара")
-    price: Decimal = Field(
-        Numeric(10, 2), description="Цена товара в рублях", gt=0, decimal_places=2
-    )
+    price: Decimal = Field(description="Цена товара в рублях", gt=0, decimal_places=2)
     image_url: str | None = Field(None, description="URL изображения товара")
     stock: int = Field(..., description="Количество товара на складе")
     category_id: int = Field(..., description="ID категории")
-    rating: Decimal = Field(Numeric(3, 2), description="Рейтинг товара")
+    rating: Decimal = Field(..., description="Рейтинг товара")
     is_active: bool = Field(..., description="Активность товара")
 
     model_config = ConfigDict(from_attributes=True)
@@ -108,8 +105,8 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, description="Пароль (минимум 8 символов)")
     role: str = Field(
         default="buyer",
-        pattern="^(buyer|seller)$",
-        description="Роль: 'buyer' или 'seller'",
+        pattern="^(buyer|seller|admin)$",
+        description="Роль: 'buyer', 'seller' или 'admin'",
     )
 
 
@@ -151,6 +148,31 @@ class Review(BaseModel):
     comment: str | None = Field(descriprion="Комментарий к отзыву")
     comment_date: datetime = Field(..., descriprion="Дата отзыва")
     grade: int = Field(..., ge=1, le=5, description="Оценка товара")
-    is_active: bool = Field(default=True, description="Активность отзыва")
+    is_active: bool = Field(description="Активность отзыва")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReplyCreate(BaseModel):
+    review_id: int = Field(
+        descriprion="Уникальный идентификатор отзыва, под которым оставлен ответ"
+    )
+    parent_id: int | None = Field(
+        descriprion="Уникальный идентификатор ответа-родителя"
+    )
+    message: str = Field(descriprion="Текстовое содержимое ответа")
+
+
+class Reply(BaseModel):
+    id: int = Field(descriprion="Уникальный идентификатор ответа")
+    user_id: int = Field(descriprion="Уникальный идентификатор автора ответа")
+    review_id: int = Field(
+        descriprion="Уникальный идентификатор отзыва, под которым оставлен ответ"
+    )
+    parent_id: int | None = Field(
+        descriprion="Уникальный идентификатор ответа-родителя"
+    )
+    message: str = Field(min_length=1, descriprion="Текстовое содержимое ответа")
+    created_at: datetime = Field(descriprion="Дата создания ответа")
+    updated_at: datetime | None = Field(descriprion="Дата последнего изменения ответа")
+    is_active: bool = Field(..., description="Активность ответа")

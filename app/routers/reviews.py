@@ -6,9 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.reviews import Review as ReviewModel
 from app.models.users import User as UserModel
 from app.models.products import Product as ProductModel
+from app.models.replies import Reply as ReplyModel
 from app.schemas import (
     Review as ReviewResponseSchema,
     ReviewCreate as ReviewRequestSchema,
+    Reply as ReplyResponseSchema,
 )
 from app.db_depends import get_db
 from app.db_depends import get_async_db
@@ -16,11 +18,12 @@ from app.db_depends import get_async_db
 
 from app.auth import get_current_buyer, get_current_user
 
-# Создаём маршрутизатор для отзывов
 router = APIRouter(
     prefix="/reviews",
     tags=["reviews"],
 )
+
+# TODO В модель отзыва добавить дату последнего изменения, в put добаваить обновление этого поля
 
 
 @router.get(
@@ -75,8 +78,50 @@ async def create_review(
     return db_review
 
 
+@router.put(
+    "/{review_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=ReviewResponseSchema,
+)
+async def update_review(
+    review_id: int,
+    review: ReviewRequestSchema,
+    current_user: UserModel = Depends(get_current_buyer),
+    db: AsyncSession = Depends(get_async_db),
+) -> ReviewResponseSchema:
+    """Редактирует отзыв"""
+    db_review_stmt = select(ReviewModel).where(
+        ReviewModel.id == review_id, ReviewModel.is_active == True
+    )
+    db_review_result = await db.scalars(db_review_stmt)
+    db_review = db_review_result.first()
+    if db_review is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
+        )
+    if current_user.id != db_review.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only author can update the review",
+        )
+
+    if db_review.product_id != review.product_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Product ID must not change",
+        )
+    await db.execute(
+        update(ReviewModel)
+        .where(ReviewModel.id == review_id)
+        .values(**review.model_dump())
+    )
+    await db.commit()
+    await db.refresh(db_review)
+    return db_review
+
+
 @router.delete(
-    "/reviews/{review_id}",
+    "/{review_id}",
     status_code=status.HTTP_200_OK,
     response_model=dict,
 )
@@ -120,3 +165,19 @@ async def delete_review(
 
     await db.commit()
     return {"message": "Review deleted"}
+
+
+@router.get(
+    "/{review_id}/replies",
+    status_code=status.HTTP_200_OK,
+    response_model=list[ReplyResponseSchema],
+)
+async def get_replies_below_review(
+    review_id: int, db: AsyncSession = Depends(get_async_db)
+) -> list[ReplyResponseSchema]:
+    db_replies_stmt = select(ReplyModel).where(
+        ReplyModel.is_active == True, ReplyModel.review_id == review_id
+    )
+    db_replies_result = await db.scalars(db_replies_stmt)
+    db_replies = db_replies_result.all()
+    return db_replies

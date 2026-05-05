@@ -18,7 +18,6 @@ from app.db_depends import get_async_db
 from app.models.users import User as UserModel
 from app.auth import get_current_seller
 
-# Создаём маршрутизатор для товаров
 router = APIRouter(
     prefix="/products",
     tags=["products"],
@@ -81,7 +80,7 @@ async def create_product(
     db_product = ProductModel(**product.model_dump(), seller_id=current_user.id)
     db.add(db_product)
     await db.commit()
-    await db.refresh(db_product)  # Для получения id и is_active из базы
+    await db.refresh(db_product)
     return db_product
 
 
@@ -179,7 +178,7 @@ async def update_product(
         .values(**product.model_dump())
     )
     await db.commit()
-    await db.refresh(db_product)  # Для консистентности данных
+    await db.refresh(db_product)
     return db_product
 
 
@@ -214,7 +213,7 @@ async def delete_product(
         .values(is_active=False)
     )
     await db.commit()
-    await db.refresh(product)  # Для возврата is_active = False
+    await db.refresh(product)
     return product
 
 
