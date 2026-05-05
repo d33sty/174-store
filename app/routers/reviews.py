@@ -173,6 +173,7 @@ async def delete_review(
 async def get_replies_below_review(
     review_id: int, db: AsyncSession = Depends(get_async_db)
 ) -> list[ReplyResponseSchema]:
+    """Возвращает список ответов под отзывом по заданному ID"""
     db_replies_stmt = select(ReplyModel).where(
         ReplyModel.is_active == True, ReplyModel.review_id == review_id
     )

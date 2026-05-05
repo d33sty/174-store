@@ -27,6 +27,7 @@ router = APIRouter(
 async def get_all_replies(
     db: AsyncSession = Depends(get_async_db),
 ) -> list[ReplyResponseSchema]:
+    """Возвращает список всех активных ответов"""
     db_replies_stmt = select(ReplyModel).where(ReplyModel.is_active == True)
     db_replies_result = await db.scalars(db_replies_stmt)
     db_replies = db_replies_result.all()
@@ -41,6 +42,7 @@ async def create_reply(
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_user),
 ) -> ReplyResponseSchema:
+    """Создает новый ответ"""
     db_rev_stmt = select(ReviewModel).where(
         ReviewModel.is_active == True, ReviewModel.id == reply.review_id
     )
@@ -80,6 +82,7 @@ async def update_reply(
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_user),
 ):
+    """Редактирует ответ по заданному ID"""
     db_reply_stmt = select(ReplyModel).where(
         ReplyModel.is_active == True, ReplyModel.id == reply_id
     )
@@ -128,6 +131,7 @@ async def delete_reply(
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_user),
 ) -> dict:
+    """Выполняет мягкое удаление ответа по ID"""
     db_reply_stmt = select(ReplyModel).where(
         ReplyModel.is_active == True, ReplyModel.id == reply_id
     )
