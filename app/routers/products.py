@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, update, func
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.products import Product as ProductModel
@@ -12,7 +11,6 @@ from app.schemas import (
     Review as ReviewResponseSchema,
     ProductList,
 )
-from app.db_depends import get_db
 from app.db_depends import get_async_db
 
 from app.models.users import User as UserModel

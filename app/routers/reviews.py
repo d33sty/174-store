@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update, func
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reviews import Review as ReviewModel
@@ -12,7 +11,6 @@ from app.schemas import (
     ReviewCreate as ReviewRequestSchema,
     Reply as ReplyResponseSchema,
 )
-from app.db_depends import get_db
 from app.db_depends import get_async_db
 
 

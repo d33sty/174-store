@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.models.products import Product
     from app.models.users import User
+    from app.models.replies import Reply
 
 
 class Review(Base):
@@ -23,3 +24,4 @@ class Review(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="reviews")
     product: Mapped["Product"] = relationship("Product", back_populates="reviews")
+    replies: Mapped[list["Reply"]] = relationship("Reply", back_populates="review")

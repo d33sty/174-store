@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update, func
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reviews import Review as ReviewModel
@@ -11,9 +10,10 @@ from app.schemas import (
     Reply as ReplyResponseSchema,
     ReplyCreate as ReplyRequestSchema,
 )
-from app.db_depends import get_db
 from app.db_depends import get_async_db
 from app.auth import get_current_user
+
+from datetime import datetime
 
 router = APIRouter(
     prefix="/replies",
@@ -33,7 +33,6 @@ async def get_all_replies(
     return db_replies
 
 
-# TODO post reply
 @router.post(
     "/", response_model=ReplyResponseSchema, status_code=status.HTTP_201_CREATED
 )
@@ -70,5 +69,81 @@ async def create_reply(
     return db_reply
 
 
-# TODO put reply
-# TODO delete reply
+@router.put(
+    "/{reply_id}/",
+    response_model=ReplyResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+async def update_reply(
+    reply_id: int,
+    reply: ReplyRequestSchema,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    db_reply_stmt = select(ReplyModel).where(
+        ReplyModel.is_active == True, ReplyModel.id == reply_id
+    )
+    db_reply_result = await db.scalars(db_reply_stmt)
+    db_reply = db_reply_result.first()
+    if db_reply is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Reply not found"
+        )
+
+    if current_user.id != db_reply.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only author can update the reply",
+        )
+
+    db_review_stmt = select(ReviewModel).where(
+        ReviewModel.is_active == True, ReviewModel.id == reply.review_id
+    )
+    db_review_result = await db.scalars(db_review_stmt)
+    db_review = db_review_result.first()
+    if db_review is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
+        )
+
+    if db_reply.id == reply.parent_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Parent can't be the same reply",
+        )
+
+    await db.execute(
+        update(ReplyModel)
+        .where(ReplyModel.id == reply_id)
+        .values(**reply.model_dump(), updated_at=datetime.now())
+    )
+    await db.commit()
+    await db.refresh(db_reply)
+    return db_reply
+
+
+@router.delete("/{reply_id}/", response_model=dict, status_code=status.HTTP_200_OK)
+async def delete_reply(
+    reply_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
+    db_reply_stmt = select(ReplyModel).where(
+        ReplyModel.is_active == True, ReplyModel.id == reply_id
+    )
+    db_reply_result = await db.scalars(db_reply_stmt)
+    db_reply = db_reply_result.first()
+    if db_reply is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Reply not found"
+        )
+
+    if not (db_reply.user_id == current_user.id or current_user.role == "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or authors can delete replies",
+        )
+
+    db_reply.is_active = False
+    await db.commit()
+    return {"message": "Reply deleted"}
