@@ -65,7 +65,7 @@ async def get_all_products(
     if search:
         search_value = search.strip()
         if search_value:
-            ts_query = func.websearch_to_tsquery("english", search_value)
+            ts_query = func.websearch_to_tsquery("russian", search_value)
             filters.append(ProductModel.tsv.op("@@")(ts_query))
             rank_col = func.ts_rank_cd(ProductModel.tsv, ts_query).label("rank")
             # total с учётом полнотекстового фильтра
