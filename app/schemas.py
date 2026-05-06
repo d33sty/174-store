@@ -77,6 +77,8 @@ class Product(BaseModel):
     stock: int = Field(..., description="Количество товара на складе")
     category_id: int = Field(..., description="ID категории")
     rating: Decimal = Field(..., description="Рейтинг товара")
+    created_at: datetime = Field(descriprion="Дата создания товара")
+    updated_at: datetime | None = Field(descriprion="Дата последнего изменения товара")
     is_active: bool = Field(..., description="Активность товара")
 
     model_config = ConfigDict(from_attributes=True)

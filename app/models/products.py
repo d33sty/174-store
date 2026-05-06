@@ -1,8 +1,8 @@
 from decimal import Decimal
-from sqlalchemy import String, Boolean, Integer, Numeric
+from sqlalchemy import String, Boolean, Integer, Numeric, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
-
+from datetime import datetime
 from app.database import Base
 from typing import TYPE_CHECKING
 
@@ -21,6 +21,9 @@ class Product(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(200), nullable=True)
     stock: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id"), nullable=False
