@@ -7,10 +7,17 @@ from sqlalchemy.orm import selectinload
 
 from app.auth import get_current_user
 from app.db_depends import get_async_db
+from app.payments import create_yookassa_payment
+
 from app.models.cart_items import CartItem as CartItemModel
 from app.models.orders import Order as OrderModel, OrderItem as OrderItemModel
 from app.models.users import User as UserModel
-from app.schemas import Order as OrderSchema, OrderList
+from app.schemas import (
+    Order as OrderSchema,
+    OrderList,
+    OrderCheckoutResponse,
+    OrderChekoutConfirmation,
+)
 
 router = APIRouter(
     prefix="/orders",
@@ -30,7 +37,9 @@ async def _load_order_with_items(db: AsyncSession, order_id: int) -> OrderModel 
 
 
 @router.post(
-    "/checkout", response_model=OrderSchema, status_code=status.HTTP_201_CREATED
+    "/checkout",
+    response_model=OrderCheckoutResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def checkout_order(
     db: AsyncSession = Depends(get_async_db),
@@ -40,13 +49,13 @@ async def checkout_order(
     Создаёт заказ на основе текущей корзины пользователя.
     Сохраняет позиции заказа, вычитает остатки и очищает корзину.
     """
-    cart_result = await db.scalars(
+    cart_result = await db.execute(
         select(CartItemModel)
         .options(selectinload(CartItemModel.product))
         .where(CartItemModel.user_id == current_user.id)
         .order_by(CartItemModel.id)
     )
-    cart_items = cart_result.all()
+    cart_items = list(cart_result.scalars().all())
     if not cart_items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty"
@@ -90,6 +99,30 @@ async def checkout_order(
     order.total_amount = total_amount
     db.add(order)
 
+    try:
+        await db.flush()
+        payment_info = await create_yookassa_payment(
+            order_id=order.id,
+            amount=order.total_amount,
+            user_email=current_user.email,
+            description=f"Оплата заказа #{order.id}",
+        )
+    except RuntimeError as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        print(exc)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Не удалось инициировать оплату",
+        ) from exc
+
+    order.payment_id = payment_info.get("id")
+
     await db.execute(
         delete(CartItemModel).where(CartItemModel.user_id == current_user.id)
     )
@@ -101,7 +134,10 @@ async def checkout_order(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to load created order",
         )
-    return created_order
+    return OrderCheckoutResponse(
+        order=created_order,
+        confirmation_url=payment_info.get("confirmation_url"),
+    )
 
 
 @router.get("/", response_model=OrderList)
@@ -145,3 +181,41 @@ async def get_order(
             status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
     return order
+
+
+@router.get(
+    "/{order_id}/status",
+    response_model=OrderChekoutConfirmation,
+    status_code=status.HTTP_200_OK,
+)
+async def get_order_status_by_id(
+    order_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> OrderChekoutConfirmation:
+    db_order_stmt = select(OrderModel).where(OrderModel.id == order_id)
+    db_order_result = await db.scalars(db_order_stmt)
+    db_order = db_order_result.first()
+    if db_order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+        )
+
+    if db_order.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="The order is not yours"
+        )
+
+    messages = {
+        "paid": f"Спасибо! Заказ #{order_id} оплачен. Ожидайте доставку.",
+        "pending": f"Ожидается оплата заказа #{order_id}.",
+        "failed": "Оплата заказа #{order_id} не удалась. Попробуйте позже.",
+        "cancelled": "Оплата заказа #{order_id} отменена.",
+    }
+
+    return {
+        "order_id": order_id,
+        "status": db_order.status,
+        "paid_at": db_order.paid_at,
+        "message": messages.get(db_order.status),
+    }

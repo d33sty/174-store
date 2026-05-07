@@ -268,3 +268,20 @@ class OrderList(BaseModel):
     page_size: int = Field(ge=1, description="Размер страницы")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OrderCheckoutResponse(BaseModel):
+    order: Order = Field(..., description="Созданный заказ")
+    confirmation_url: str | None = Field(
+        None,
+        description="URL для перехода на оплату в YooKassa",
+    )
+
+
+class OrderChekoutConfirmation(BaseModel):
+    order_id: int = Field(description="Уникальный идентификатор заказа")
+    status: str = Field(description="Статус оплаты заказа")
+    paid_at: datetime | None = Field(
+        description="Дата и время оплаты, null если не оплачен"
+    )
+    message: str = Field(description="Сообщение о статусе оплаты")
