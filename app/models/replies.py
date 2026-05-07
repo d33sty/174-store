@@ -6,7 +6,6 @@ from app.database import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.products import Product
     from app.models.users import User
     from app.models.reviews import Review
 

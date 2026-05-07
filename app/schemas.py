@@ -239,7 +239,7 @@ class Order(BaseModel):
     status: str = Field(..., description="Текущий статус заказа")
     total_amount: Decimal = Field(..., ge=0, description="Общая стоимость")
     created_at: datetime = Field(..., description="Когда заказ был создан")
-    updated_at: datetime = Field(..., description="Когда последний раз обновлялся")
+    updated_at: datetime | None = Field(description="Когда последний раз обновлялся")
     items: list[OrderItem] = Field(default_factory=list, description="Список позиций")
 
     model_config = ConfigDict(from_attributes=True)
