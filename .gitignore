@@ -297,3 +297,15 @@ site/
 !.env.example
 !.env.sample
 !.env.template
+
+# ===================
+# Virtual Environment
+# ===================
+
+venv/
+env/
+.env_*
+.venv
+ENV/
+env.bak/
+venv.bak/
