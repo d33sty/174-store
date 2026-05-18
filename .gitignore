@@ -176,6 +176,9 @@ $RECYCLE.BIN/
 # Project specific
 # ===================
 
+# Uploaded media files
+media/
+
 # Docker
 .dockerignore
 *.tar.gz
