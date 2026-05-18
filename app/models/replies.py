@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, String, ForeignKey, Text, DateTime
+from sqlalchemy import Boolean, Integer, String, ForeignKey, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
@@ -19,8 +19,12 @@ class Reply(Base):
     message: Mapped[str] = mapped_column(Text)
     review_id: Mapped[int] = mapped_column(ForeignKey("reviews.id"))
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("replies.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     user: Mapped["User"] = relationship("User", back_populates="replies")

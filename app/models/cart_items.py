@@ -26,8 +26,12 @@ class CartItem(Base):
         ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="cart_items")
     product: Mapped["Product"] = relationship("Product", back_populates="cart_items")

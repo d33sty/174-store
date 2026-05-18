@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, String, ForeignKey, Text, DateTime
+from sqlalchemy import Boolean, Integer, String, ForeignKey, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
@@ -18,7 +18,9 @@ class Review(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    comment_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    comment_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     grade: Mapped[int] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 

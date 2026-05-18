@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reviews import Review as ReviewModel
 from app.models.users import User as UserModel
-from app.models.products import Product as ProductModel
 from app.models.replies import Reply as ReplyModel
 from app.schemas import (
     Reply as ReplyResponseSchema,
@@ -12,8 +11,6 @@ from app.schemas import (
 )
 from app.db_depends import get_async_db
 from app.auth import get_current_user
-
-from datetime import datetime
 
 router = APIRouter(
     prefix="/replies",
@@ -118,7 +115,7 @@ async def update_reply(
     await db.execute(
         update(ReplyModel)
         .where(ReplyModel.id == reply_id)
-        .values(**reply.model_dump(), updated_at=datetime.now())
+        .values(**reply.model_dump(), updated_at=func.now())
     )
     await db.commit()
     await db.refresh(db_reply)
