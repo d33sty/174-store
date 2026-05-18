@@ -21,8 +21,6 @@ router = APIRouter(
     tags=["reviews"],
 )
 
-# TODO В модель отзыва добавить дату последнего изменения, в put добаваить обновление этого поля
-
 
 @router.get(
     "/", response_model=list[ReviewResponseSchema], status_code=status.HTTP_200_OK
@@ -111,7 +109,7 @@ async def update_review(
     await db.execute(
         update(ReviewModel)
         .where(ReviewModel.id == review_id)
-        .values(**review.model_dump())
+        .values(**review.model_dump(), updated_at=func.now())
     )
     await db.commit()
     await db.refresh(db_review)

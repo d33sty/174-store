@@ -165,6 +165,7 @@ class Review(BaseModel):
     )
     comment: str | None = Field(descriprion="Комментарий к отзыву")
     comment_date: datetime = Field(..., descriprion="Дата отзыва")
+    updated_at: datetime = Field(..., description="Дата последнего изменения отзыва")
     grade: int = Field(..., ge=1, le=5, description="Оценка товара")
     is_active: bool = Field(description="Активность отзыва")
 
