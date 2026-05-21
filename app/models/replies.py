@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 
 class Reply(Base):
-    # TODO добавить лайки
     __tablename__ = "replies"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

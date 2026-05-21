@@ -1,0 +1,43 @@
+# Secrets
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Logs
+*.log
+
+# Tests & linting caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker files
+docker-compose*.yml
+app/Dockerfile
+
+# Docs
+README.md

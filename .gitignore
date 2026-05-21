@@ -179,8 +179,10 @@ $RECYCLE.BIN/
 # Uploaded media files
 media/
 
+# Claude
+.claude/
+
 # Docker
-.dockerignore
 *.tar.gz
 *.tar
 
