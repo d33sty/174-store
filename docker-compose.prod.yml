@@ -39,16 +39,26 @@ services:
   nginx:
     # Собираем образ nginx из локальной директории nginx
     build: nginx
-    # Монтируем том media_data в /var/www/media контейнера для доступа к медиафайлам
     volumes:
       - media_data:/var/www/media
-    # Открываем порт 80 внутри и снаружи
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     ports:
       - 80:80
+      - 443:443
     # Запускаем контейнер после старта контейнера web-приложения
     depends_on:
       - web
 
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # --keep-until-expiring: не трогать сертификат если он ещё актуален
+    command: certonly --webroot --webroot-path=/var/www/certbot/ --email distortion616@gmail.com --agree-tos --no-eff-email --keep-until-expiring -d 174-store.ru
+    depends_on:
+      - nginx
 
 volumes:
   # Определяем том для хранения данных БД
