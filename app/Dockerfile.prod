@@ -1,4 +1,4 @@
-FROM python:3.12-alpine
+FROM tiangolo/uvicorn-gunicorn:python3.11-slim
 
 # устанавливаем переменные окружения
 ENV HOME=/home/fast \
@@ -11,8 +11,8 @@ ENV HOME=/home/fast \
 # создаем группу fast
 # создаем отдельного пользователя fast
 RUN mkdir -p $APP_HOME \
-  && addgroup -S fast \
-  && adduser -S fast -G fast
+ && groupadd -r fast\
+ && useradd -r -g fast fast
 
 # устанавливаем рабочую директорию
 WORKDIR $HOME
@@ -20,7 +20,7 @@ WORKDIR $HOME
 # копирование проекта FastAPI в рабочую директорию
 COPY app app
 COPY media media
-COPY requirements.txt alembic.ini .env/ ./
+COPY requirements.txt alembic.ini ./
 
 # обновление pip
 # установка зависимостей из списка requirements.txt
@@ -31,3 +31,4 @@ RUN pip install --upgrade pip \
 
 # изменение рабочего пользователя на fast
 USER fast
+
