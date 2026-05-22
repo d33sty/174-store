@@ -6,8 +6,11 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Site](https://img.shields.io/badge/Сайт-174--store.ru-ff6b35.svg)](http://174-store.ru)
 
 REST API интернет-магазина с поддержкой ролей, корзиной, заказами и интеграцией платёжной системы YooKassa.
+
+![174 Store Landing](docs/preview.png)
 
 ---
 
