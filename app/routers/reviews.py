@@ -55,6 +55,19 @@ async def create_review(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
         )
 
+    existing = await db.scalars(
+        select(ReviewModel).where(
+            ReviewModel.user_id == current_user.id,
+            ReviewModel.product_id == review.product_id,
+            ReviewModel.is_active == True,
+        )
+    )
+    if existing.first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You have already reviewed this product",
+        )
+
     db_review = ReviewModel(**review.model_dump(), user_id=current_user.id)
 
     db_prod_new_rating_stmt = select(
@@ -111,6 +124,20 @@ async def update_review(
         .where(ReviewModel.id == review_id)
         .values(**review.model_dump(), updated_at=func.now())
     )
+
+    db_prod_result = await db.scalars(
+        select(ProductModel).where(ProductModel.id == db_review.product_id)
+    )
+    db_prod = db_prod_result.first()
+    if db_prod:
+        new_rating = await db.scalar(
+            select(func.coalesce(func.avg(ReviewModel.grade), 0)).where(
+                ReviewModel.product_id == db_review.product_id,
+                ReviewModel.is_active == True,
+            )
+        )
+        db_prod.rating = new_rating
+
     await db.commit()
     await db.refresh(db_review)
     return db_review

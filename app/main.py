@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import (
     categories,
@@ -15,6 +16,7 @@ from uuid import uuid4
 from fastapi.responses import JSONResponse
 
 from loguru import logger
+from app.config import CORS_ORIGINS
 
 logger.add(
     "info.log",
@@ -27,6 +29,17 @@ logger.add(
 app = FastAPI(
     title="174-store",
     version="0.1.0",
+)
+
+# CORS — добавляется после log middleware чтобы быть самым внешним слоем
+# и перехватывать preflight OPTIONS до логирования
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+    max_age=600,
 )
 
 

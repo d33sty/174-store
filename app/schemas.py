@@ -93,8 +93,8 @@ class Product(BaseModel):
     stock: int = Field(..., description="Количество товара на складе")
     category_id: int = Field(..., description="ID категории")
     rating: Decimal = Field(..., description="Рейтинг товара")
-    created_at: datetime = Field(descriprion="Дата создания товара")
-    updated_at: datetime | None = Field(descriprion="Дата последнего изменения товара")
+    created_at: datetime = Field(description="Дата создания товара")
+    updated_at: datetime | None = Field(description="Дата последнего изменения товара")
     is_active: bool = Field(..., description="Активность товара")
 
     model_config = ConfigDict(from_attributes=True)
@@ -123,8 +123,8 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, description="Пароль (минимум 8 символов)")
     role: str = Field(
         default="buyer",
-        pattern="^(buyer|seller|admin)$",
-        description="Роль: 'buyer', 'seller' или 'admin'",
+        pattern="^(buyer|seller)$",
+        description="Роль: 'buyer' или 'seller'",
     )
 
 
@@ -151,20 +151,20 @@ class RefreshTokenRequest(BaseModel):
 
 class ReviewCreate(BaseModel):
     product_id: int = Field(
-        ..., descriprion="Уникальный идентификатор товара, на который оставлен отзыв"
+        ..., description="Уникальный идентификатор товара, на который оставлен отзыв"
     )
-    comment: str | None = Field(descriprion="Комментарий к отзыву")
+    comment: str | None = Field(description="Комментарий к отзыву")
     grade: int = Field(..., ge=1, le=5, description="Оценка товара")
 
 
 class Review(BaseModel):
-    id: int = Field(..., descriprion="Уникальный идентификатор отзыва")
-    user_id: int = Field(..., descriprion="Уникальный идентификатор автора отзыва")
+    id: int = Field(..., description="Уникальный идентификатор отзыва")
+    user_id: int = Field(..., description="Уникальный идентификатор автора отзыва")
     product_id: int = Field(
-        ..., descriprion="Уникальный идентификатор товара, на который оставлен отзыв"
+        ..., description="Уникальный идентификатор товара, на который оставлен отзыв"
     )
-    comment: str | None = Field(descriprion="Комментарий к отзыву")
-    comment_date: datetime = Field(..., descriprion="Дата отзыва")
+    comment: str | None = Field(description="Комментарий к отзыву")
+    comment_date: datetime = Field(..., description="Дата отзыва")
     updated_at: datetime = Field(..., description="Дата последнего изменения отзыва")
     grade: int = Field(..., ge=1, le=5, description="Оценка товара")
     is_active: bool = Field(description="Активность отзыва")
@@ -174,27 +174,29 @@ class Review(BaseModel):
 
 class ReplyCreate(BaseModel):
     review_id: int = Field(
-        descriprion="Уникальный идентификатор отзыва, под которым оставлен ответ"
+        description="Уникальный идентификатор отзыва, под которым оставлен ответ"
     )
     parent_id: int | None = Field(
-        descriprion="Уникальный идентификатор ответа-родителя"
+        description="Уникальный идентификатор ответа-родителя"
     )
-    message: str = Field(descriprion="Текстовое содержимое ответа")
+    message: str = Field(description="Текстовое содержимое ответа")
 
 
 class Reply(BaseModel):
-    id: int = Field(descriprion="Уникальный идентификатор ответа")
-    user_id: int = Field(descriprion="Уникальный идентификатор автора ответа")
+    id: int = Field(description="Уникальный идентификатор ответа")
+    user_id: int = Field(description="Уникальный идентификатор автора ответа")
     review_id: int = Field(
-        descriprion="Уникальный идентификатор отзыва, под которым оставлен ответ"
+        description="Уникальный идентификатор отзыва, под которым оставлен ответ"
     )
     parent_id: int | None = Field(
-        descriprion="Уникальный идентификатор ответа-родителя"
+        description="Уникальный идентификатор ответа-родителя"
     )
-    message: str = Field(min_length=1, descriprion="Текстовое содержимое ответа")
-    created_at: datetime = Field(descriprion="Дата создания ответа")
-    updated_at: datetime | None = Field(descriprion="Дата последнего изменения ответа")
+    message: str = Field(min_length=1, description="Текстовое содержимое ответа")
+    created_at: datetime = Field(description="Дата создания ответа")
+    updated_at: datetime | None = Field(description="Дата последнего изменения ответа")
     is_active: bool = Field(..., description="Активность ответа")
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CartItemBase(BaseModel):

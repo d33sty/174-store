@@ -176,8 +176,6 @@ $RECYCLE.BIN/
 # Project specific
 # ===================
 
-# Uploaded media files
-media/
 
 # Claude
 .claude/

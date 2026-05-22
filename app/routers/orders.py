@@ -11,6 +11,7 @@ from app.payments import create_yookassa_payment
 
 from app.models.cart_items import CartItem as CartItemModel
 from app.models.orders import Order as OrderModel, OrderItem as OrderItemModel
+from app.models.products import Product as ProductModel
 from app.models.users import User as UserModel
 from app.schemas import (
     Order as OrderSchema,
@@ -51,9 +52,8 @@ async def checkout_order(
     """
     cart_result = await db.execute(
         select(CartItemModel)
-        .options(selectinload(CartItemModel.product))
         .where(CartItemModel.user_id == current_user.id)
-        .order_by(CartItemModel.id)
+        .order_by(CartItemModel.product_id)
     )
     cart_items = list(cart_result.scalars().all())
     if not cart_items:
@@ -61,11 +61,21 @@ async def checkout_order(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty"
         )
 
+    # Блокируем строки продуктов в фиксированном порядке по ID чтобы избежать дедлоков
+    product_ids = sorted({item.product_id for item in cart_items})
+    products_result = await db.execute(
+        select(ProductModel)
+        .where(ProductModel.id.in_(product_ids))
+        .order_by(ProductModel.id)
+        .with_for_update()
+    )
+    products = {p.id: p for p in products_result.scalars().all()}
+
     order = OrderModel(user_id=current_user.id)
     total_amount = Decimal("0")
 
     for cart_item in cart_items:
-        product = cart_item.product
+        product = products.get(cart_item.product_id)
         if not product or not product.is_active:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

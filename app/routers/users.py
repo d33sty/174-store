@@ -38,6 +38,14 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db)
     return db_user
 
 
+@router.get("/me", response_model=UserSchema)
+async def get_current_user_info(current_user: UserModel = Depends(get_current_user)):
+    """
+    Возвращает данные текущего авторизованного пользователя.
+    """
+    return current_user
+
+
 @router.post("/token")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -167,6 +175,6 @@ async def access_tocken_by_refresh(
     )
 
     return {
-        "access-token": new_access_token,
+        "access_token": new_access_token,
         "token_type": "bearer",
     }
