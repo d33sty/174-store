@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.routers import (
     categories,
@@ -76,10 +79,6 @@ app.include_router(payments.router)
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 
-# Корневой эндпоинт для проверки
 @app.get("/")
 async def root():
-    """
-    Корневой маршрут, подтверждающий, что API работает.
-    """
-    return {"message": "Добро пожаловать в API интернет-магазина!"}
+    return FileResponse(Path(__file__).parent / "static" / "index.html")

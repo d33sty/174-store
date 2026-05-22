@@ -26,6 +26,7 @@ REST API интернет-магазина с поддержкой ролей, �
 - **CORS** — настраивается через переменные окружения
 - **Мягкое удаление** — через флаг `is_active` для товаров, отзывов, ответов, категорий
 - **Логирование** — loguru с контекстным log_id на каждый запрос
+- **Лендинг** — приветственная страница на корневом эндпоинте `/` со ссылкой на документацию
 - **Продакшн-деплой** — Gunicorn + Uvicorn workers + Nginx в Docker Compose
 
 ---
@@ -236,6 +237,8 @@ CORS_ORIGINS=http://example.com,https://example.com
 │   ├── db_depends.py        # DI для сессий БД
 │   ├── schemas.py           # Pydantic схемы запросов и ответов
 │   ├── payments.py          # Async обёртка над YooKassa SDK
+│   ├── static/
+│   │   └── index.html       # Лендинг на корневом эндпоинте
 │   ├── models/
 │   │   ├── users.py
 │   │   ├── categories.py
