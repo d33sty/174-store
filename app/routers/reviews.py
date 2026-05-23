@@ -6,6 +6,7 @@ from app.models.reviews import Review as ReviewModel
 from app.models.users import User as UserModel
 from app.models.products import Product as ProductModel
 from app.models.replies import Reply as ReplyModel
+from app.models.orders import Order as OrderModel, OrderItem as OrderItemModel
 from app.schemas import (
     Review as ReviewResponseSchema,
     ReviewCreate as ReviewRequestSchema,
@@ -53,6 +54,22 @@ async def create_review(
     if db_prod is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
+        )
+
+    purchased = await db.scalar(
+        select(OrderItemModel)
+        .join(OrderModel, OrderItemModel.order_id == OrderModel.id)
+        .where(
+            OrderModel.user_id == current_user.id,
+            OrderModel.status == "paid",
+            OrderItemModel.product_id == review.product_id,
+        )
+        .limit(1)
+    )
+    if not purchased:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only review products you have purchased",
         )
 
     existing = await db.scalars(
