@@ -1,8 +1,5 @@
-from pathlib import Path
-
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 
 from app.routers import (
     categories,
@@ -77,8 +74,3 @@ app.include_router(payments.router)
 
 
 app.mount("/media", StaticFiles(directory="media"), name="media")
-
-
-@app.get("/")
-async def root():
-    return FileResponse(Path(__file__).parent / "static" / "index.html")
