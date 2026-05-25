@@ -4,7 +4,7 @@ from sqlalchemy import select
 from fastapi.security import OAuth2PasswordRequestForm
 import jwt
 from app.models.users import User as UserModel
-from app.schemas import UserCreate, User as UserSchema, RefreshTokenRequest
+from app.schemas import UserCreate, UserUpdate, User as UserSchema, RefreshTokenRequest
 from app.db_depends import get_async_db
 from app.auth import (
     hash_password,
@@ -31,7 +31,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db)
         )
 
     db_user = UserModel(
-        email=user.email, hashed_password=hash_password(user.password), role=user.role
+        email=user.email, hashed_password=hash_password(user.password), role="user"
     )
 
     db.add(db_user)
@@ -44,6 +44,43 @@ async def get_current_user_info(current_user: UserModel = Depends(get_current_us
     """
     Возвращает данные текущего авторизованного пользователя.
     """
+    return current_user
+
+
+@router.put("/me", response_model=UserSchema)
+async def update_current_user(
+    body: UserUpdate,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Обновляет email и/или пароль текущего пользователя.
+    """
+    if not body.has_updates():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one field (email or password) must be provided",
+        )
+
+    if body.email and body.email != current_user.email:
+        result = await db.scalars(
+            select(UserModel).where(UserModel.email == body.email)
+        )
+        if result.first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
+        current_user.email = body.email
+
+    if body.password:
+        current_user.hashed_password = hash_password(body.password)
+
+    if 'display_name' in body.model_fields_set:
+        current_user.display_name = body.display_name.strip() if body.display_name else None
+
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 

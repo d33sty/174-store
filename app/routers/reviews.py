@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload, with_loader_criteria
 
 from app.models.reviews import Review as ReviewModel
 from app.models.users import User as UserModel
@@ -13,14 +14,29 @@ from app.schemas import (
     Reply as ReplyResponseSchema,
 )
 from app.db_depends import get_async_db
-
-
-from app.auth import get_current_buyer, get_current_user
+from app.auth import get_current_user
 
 router = APIRouter(
     prefix="/reviews",
     tags=["reviews"],
 )
+
+
+def _review_options():
+    return [
+        selectinload(ReviewModel.user),
+        selectinload(ReviewModel.replies).selectinload(ReplyModel.user),
+        with_loader_criteria(ReplyModel, ReplyModel.is_active == True),
+    ]
+
+
+async def _load_review(db: AsyncSession, review_id: int) -> ReviewModel | None:
+    result = await db.scalars(
+        select(ReviewModel)
+        .options(*_review_options())
+        .where(ReviewModel.id == review_id)
+    )
+    return result.first()
 
 
 @router.get(
@@ -30,10 +46,12 @@ async def get_all_reviews(
     db: AsyncSession = Depends(get_async_db),
 ) -> list[ReviewResponseSchema]:
     """Возвращает список всех отзывов"""
-    stmt = select(ReviewModel).where(ReviewModel.is_active == True)
-    db_reviews_result = await db.scalars(stmt)
-    db_reviews = db_reviews_result.all()
-    return db_reviews
+    result = await db.scalars(
+        select(ReviewModel)
+        .options(*_review_options())
+        .where(ReviewModel.is_active == True)
+    )
+    return result.all()
 
 
 @router.post(
@@ -41,7 +59,7 @@ async def get_all_reviews(
 )
 async def create_review(
     review: ReviewRequestSchema,
-    current_user: UserModel = Depends(get_current_buyer),
+    current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_db),
 ) -> ReviewResponseSchema:
     """Создает новый отзыв"""
@@ -99,9 +117,8 @@ async def create_review(
     db.add(db_review)
     db_prod.rating = db_prod_new_rating
     await db.commit()
-    await db.refresh(db_review)
 
-    return db_review
+    return await _load_review(db, db_review.id)
 
 
 @router.put(
@@ -112,16 +129,12 @@ async def create_review(
 async def update_review(
     review_id: int,
     review: ReviewRequestSchema,
-    current_user: UserModel = Depends(get_current_buyer),
+    current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_db),
 ) -> ReviewResponseSchema:
     """Редактирует отзыв"""
-    db_review_stmt = select(ReviewModel).where(
-        ReviewModel.id == review_id, ReviewModel.is_active == True
-    )
-    db_review_result = await db.scalars(db_review_stmt)
-    db_review = db_review_result.first()
-    if db_review is None:
+    db_review = await _load_review(db, review_id)
+    if db_review is None or not db_review.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
         )
@@ -156,8 +169,7 @@ async def update_review(
         db_prod.rating = new_rating
 
     await db.commit()
-    await db.refresh(db_review)
-    return db_review
+    return await _load_review(db, review_id)
 
 
 @router.delete(
@@ -216,9 +228,9 @@ async def get_replies_below_review(
     review_id: int, db: AsyncSession = Depends(get_async_db)
 ) -> list[ReplyResponseSchema]:
     """Возвращает список ответов под отзывом по заданному ID"""
-    db_replies_stmt = select(ReplyModel).where(
-        ReplyModel.is_active == True, ReplyModel.review_id == review_id
+    result = await db.scalars(
+        select(ReplyModel)
+        .options(selectinload(ReplyModel.user))
+        .where(ReplyModel.is_active == True, ReplyModel.review_id == review_id)
     )
-    db_replies_result = await db.scalars(db_replies_stmt)
-    db_replies = db_replies_result.all()
-    return db_replies
+    return result.all()

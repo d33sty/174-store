@@ -10,13 +10,15 @@ from fastapi import (
 )
 from pathlib import Path
 import uuid
-from sqlalchemy import select, update, func, desc, and_
+from sqlalchemy import select, update, func, desc, asc
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload, with_loader_criteria
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
 from app.models.reviews import Review as ReviewModel
+from app.models.replies import Reply as ReplyModel
 from app.schemas import (
     Product as ProductSchema,
     ProductCreate,
@@ -26,7 +28,7 @@ from app.schemas import (
 from app.db_depends import get_async_db
 
 from app.models.users import User as UserModel
-from app.auth import get_current_seller
+from app.auth import get_current_admin
 
 router = APIRouter(
     prefix="/products",
@@ -74,6 +76,14 @@ def remove_product_image(url: str | None) -> None:
         file_path.unlink()
 
 
+SORT_FIELDS = {
+    "price": ProductModel.price,
+    "rating": ProductModel.rating,
+    "created_at": ProductModel.created_at,
+    "name": ProductModel.name,
+}
+
+
 @router.get("/", response_model=ProductList)
 async def get_all_products(
     page: int = Query(1, ge=1),
@@ -88,6 +98,16 @@ async def get_all_products(
         None, description="true — только товары в наличии, false — только без остатка"
     ),
     seller_id: int | None = Query(None, description="ID продавца для фильтрации"),
+    sort_by: str | None = Query(
+        None,
+        description="Поле сортировки: price, rating, created_at, name",
+        pattern="^(price|rating|created_at|name)$",
+    ),
+    order: str = Query(
+        "asc",
+        description="Направление сортировки: asc или desc",
+        pattern="^(asc|desc)$",
+    ),
     db: AsyncSession = Depends(get_async_db),
 ):
     if min_price is not None and max_price is not None and min_price > max_price:
@@ -124,25 +144,35 @@ async def get_all_products(
 
     total = await db.scalar(total_stmt) or 0
 
+    # Определяем порядок сортировки
+    sort_col = SORT_FIELDS.get(sort_by) if sort_by else None
+    order_fn = desc if order == "desc" else asc
+
     # Основной запрос (если есть поиск — добавим ранг в выборку и сортировку)
     if rank_col is not None:
+        if sort_col is not None:
+            order_clause = [order_fn(sort_col), desc(rank_col), ProductModel.id]
+        else:
+            order_clause = [desc(rank_col), ProductModel.id]
         products_stmt = (
             select(ProductModel, rank_col)
             .where(*filters)
-            .order_by(desc(rank_col), ProductModel.id)
+            .order_by(*order_clause)
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
         result = await db.execute(products_stmt)
         rows = result.all()
-        items = [row[0] for row in rows]  # сами объекты
-        # при желании можно вернуть ранг в ответе
-        # ranks = [row.rank for row in rows]
+        items = [row[0] for row in rows]
     else:
+        if sort_col is not None:
+            order_clause = [order_fn(sort_col), ProductModel.id]
+        else:
+            order_clause = [ProductModel.id]
         products_stmt = (
             select(ProductModel)
             .where(*filters)
-            .order_by(ProductModel.id)
+            .order_by(*order_clause)
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
@@ -161,10 +191,10 @@ async def create_product(
     product: ProductCreate = Depends(ProductCreate.as_form),
     image: UploadFile | None = File(None),
     db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller),
+    current_user: UserModel = Depends(get_current_admin),
 ):
     """
-    Создаёт новый товар, привязанный к текущему продавцу (только для 'seller').
+    Создаёт новый товар (только для 'admin').
     """
 
     category_result = await db.scalars(
@@ -253,21 +283,16 @@ async def update_product(
     product: ProductCreate = Depends(ProductCreate.as_form),
     image: UploadFile | None = File(None),
     db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller),
+    current_user: UserModel = Depends(get_current_admin),
 ):
     """
-    Обновляет товар, если он принадлежит текущему продавцу (только для 'seller').
+    Обновляет товар (только для 'admin').
     """
     result = await db.scalars(select(ProductModel).where(ProductModel.id == product_id))
     db_product = result.first()
     if not db_product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
-        )
-    if db_product.seller_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own products",
         )
     category_result = await db.scalars(
         select(CategoryModel).where(
@@ -299,10 +324,10 @@ async def update_product(
 async def delete_product(
     product_id: int,
     db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller),
+    current_user: UserModel = Depends(get_current_admin),
 ):
     """
-    Выполняет мягкое удаление товара, если он принадлежит текущему продавцу (только для 'seller').
+    Выполняет мягкое удаление товара (только для 'admin').
     """
     result = await db.scalars(
         select(ProductModel).where(
@@ -314,11 +339,6 @@ async def delete_product(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found or inactive",
-        )
-    if product.seller_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only delete your own products",
         )
 
     remove_product_image(product.image_url)
@@ -343,9 +363,14 @@ async def get_reviews_by_product_id(
     product_id: int, db: AsyncSession = Depends(get_async_db)
 ) -> list[ReviewResponseSchema]:
     """Возвращает список всех отзывов на указанный товар"""
-    stmt = select(ReviewModel).where(
-        ReviewModel.is_active == True, ReviewModel.product_id == product_id
+    stmt = (
+        select(ReviewModel)
+        .options(
+            selectinload(ReviewModel.user),
+            selectinload(ReviewModel.replies).selectinload(ReplyModel.user),
+            with_loader_criteria(ReplyModel, ReplyModel.is_active == True),
+        )
+        .where(ReviewModel.is_active == True, ReviewModel.product_id == product_id)
     )
     db_reviews_result = await db.scalars(stmt)
-    db_reviews = db_reviews_result.all()
-    return db_reviews
+    return db_reviews_result.all()

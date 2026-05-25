@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.reviews import Review as ReviewModel
 from app.models.users import User as UserModel
@@ -64,8 +65,13 @@ async def create_reply(
     db_reply = ReplyModel(**reply.model_dump(), user_id=current_user.id)
     db.add(db_reply)
     await db.commit()
-    await db.refresh(db_reply)
-    return db_reply
+
+    result = await db.scalars(
+        select(ReplyModel)
+        .options(selectinload(ReplyModel.user))
+        .where(ReplyModel.id == db_reply.id)
+    )
+    return result.first()
 
 
 @router.put(
@@ -118,8 +124,13 @@ async def update_reply(
         .values(**reply.model_dump(), updated_at=func.now())
     )
     await db.commit()
-    await db.refresh(db_reply)
-    return db_reply
+
+    result = await db.scalars(
+        select(ReplyModel)
+        .options(selectinload(ReplyModel.user))
+        .where(ReplyModel.id == reply_id)
+    )
+    return result.first()
 
 
 @router.delete("/{reply_id}/", response_model=dict, status_code=status.HTTP_200_OK)

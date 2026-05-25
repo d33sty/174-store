@@ -20,6 +20,8 @@ from app.schemas import (
     OrderChekoutConfirmation,
 )
 
+CANCELLABLE_STATUSES = {"pending"}
+
 router = APIRouter(
     prefix="/orders",
     tags=["orders"],
@@ -219,8 +221,8 @@ async def get_order_status_by_id(
     messages = {
         "paid": f"Спасибо! Заказ #{order_id} оплачен. Ожидайте доставку.",
         "pending": f"Ожидается оплата заказа #{order_id}.",
-        "failed": "Оплата заказа #{order_id} не удалась. Попробуйте позже.",
-        "cancelled": "Оплата заказа #{order_id} отменена.",
+        "failed": f"Оплата заказа #{order_id} не удалась. Попробуйте позже.",
+        "cancelled": f"Заказ #{order_id} отменён.",
     }
 
     return {
@@ -229,3 +231,50 @@ async def get_order_status_by_id(
         "paid_at": db_order.paid_at,
         "message": messages.get(db_order.status),
     }
+
+
+@router.post(
+    "/{order_id}/cancel",
+    response_model=OrderSchema,
+    status_code=status.HTTP_200_OK,
+)
+async def cancel_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Отменяет заказ пользователя и возвращает списанный stock товаров.
+    Возможна только для заказов в статусе 'pending'.
+    """
+    order = await _load_order_with_items(db, order_id)
+    if not order or order.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+        )
+
+    if order.status not in CANCELLABLE_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot cancel order with status '{order.status}'",
+        )
+
+    # Восстанавливаем stock — блокируем строки в фиксированном порядке
+    product_ids = sorted({item.product_id for item in order.items})
+    products_result = await db.execute(
+        select(ProductModel)
+        .where(ProductModel.id.in_(product_ids))
+        .order_by(ProductModel.id)
+        .with_for_update()
+    )
+    products = {p.id: p for p in products_result.scalars().all()}
+
+    for item in order.items:
+        product = products.get(item.product_id)
+        if product:
+            product.stock += item.quantity
+
+    order.status = "cancelled"
+    await db.commit()
+    await db.refresh(order)
+    return order

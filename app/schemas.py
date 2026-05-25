@@ -115,17 +115,26 @@ class ProductList(BaseModel):
 
 class UserCreate(BaseModel):
     """
-    Модель для создания и обновления пользователя.
-    Используется в POST и PUT запросах.
+    Модель для создания пользователя.
+    Используется в POST /users/.
     """
 
     email: EmailStr = Field(description="Email пользователя")
     password: str = Field(min_length=8, description="Пароль (минимум 8 символов)")
-    role: str = Field(
-        default="buyer",
-        pattern="^(buyer|seller)$",
-        description="Роль: 'buyer' или 'seller'",
-    )
+
+
+class UserUpdate(BaseModel):
+    """
+    Модель для обновления профиля текущего пользователя.
+    Хотя бы одно поле обязательно.
+    """
+
+    email: EmailStr | None = Field(None, description="Новый email")
+    password: str | None = Field(None, min_length=8, description="Новый пароль (минимум 8 символов)")
+    display_name: str | None = Field(None, max_length=50, description="Отображаемое имя (до 50 символов)")
+
+    def has_updates(self) -> bool:
+        return bool(self.model_fields_set)
 
 
 class User(BaseModel):
@@ -138,6 +147,7 @@ class User(BaseModel):
     email: EmailStr
     is_active: bool
     role: str
+    display_name: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -147,29 +157,6 @@ class RefreshTokenRequest(BaseModel):
     """
 
     refresh_token: str
-
-
-class ReviewCreate(BaseModel):
-    product_id: int = Field(
-        ..., description="Уникальный идентификатор товара, на который оставлен отзыв"
-    )
-    comment: str | None = Field(description="Комментарий к отзыву")
-    grade: int = Field(..., ge=1, le=5, description="Оценка товара")
-
-
-class Review(BaseModel):
-    id: int = Field(..., description="Уникальный идентификатор отзыва")
-    user_id: int = Field(..., description="Уникальный идентификатор автора отзыва")
-    product_id: int = Field(
-        ..., description="Уникальный идентификатор товара, на который оставлен отзыв"
-    )
-    comment: str | None = Field(description="Комментарий к отзыву")
-    comment_date: datetime = Field(..., description="Дата отзыва")
-    updated_at: datetime = Field(..., description="Дата последнего изменения отзыва")
-    grade: int = Field(..., ge=1, le=5, description="Оценка товара")
-    is_active: bool = Field(description="Активность отзыва")
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class ReplyCreate(BaseModel):
@@ -195,6 +182,34 @@ class Reply(BaseModel):
     created_at: datetime = Field(description="Дата создания ответа")
     updated_at: datetime | None = Field(description="Дата последнего изменения ответа")
     is_active: bool = Field(..., description="Активность ответа")
+    display_name: str | None = Field(None, description="Отображаемое имя автора")
+    is_admin: bool = Field(False, description="Является ли автор администратором")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewCreate(BaseModel):
+    product_id: int = Field(
+        ..., description="Уникальный идентификатор товара, на который оставлен отзыв"
+    )
+    comment: str | None = Field(description="Комментарий к отзыву")
+    grade: int = Field(..., ge=1, le=5, description="Оценка товара")
+
+
+class Review(BaseModel):
+    id: int = Field(..., description="Уникальный идентификатор отзыва")
+    user_id: int = Field(..., description="Уникальный идентификатор автора отзыва")
+    product_id: int = Field(
+        ..., description="Уникальный идентификатор товара, на который оставлен отзыв"
+    )
+    comment: str | None = Field(description="Комментарий к отзыву")
+    comment_date: datetime = Field(..., description="Дата отзыва")
+    updated_at: datetime = Field(..., description="Дата последнего изменения отзыва")
+    grade: int = Field(..., ge=1, le=5, description="Оценка товара")
+    is_active: bool = Field(description="Активность отзыва")
+    display_name: str | None = Field(None, description="Отображаемое имя автора")
+    is_admin: bool = Field(False, description="Является ли автор администратором")
+    replies: list[Reply] = Field(default_factory=list, description="Ответы на отзыв")
 
     model_config = ConfigDict(from_attributes=True)
 

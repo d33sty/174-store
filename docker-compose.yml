@@ -10,7 +10,11 @@ services:
     environment:
       - DB_HOST=db
     # Запускаем ASGI-приложение через сервер приложений Uvicorn
-    command: uvicorn app.main:app --host 0.0.0.0
+    command: uvicorn app.main:app --host 0.0.0.0 --reload
+    # Монтируем код и медиафайлы — изменения подхватываются без пересборки образа
+    volumes:
+      - ./app:/home/fast/app
+      - ./media:/home/fast/media
     # Открываем порт 8000 внутри и снаружи
     ports:
       - 8000:8000

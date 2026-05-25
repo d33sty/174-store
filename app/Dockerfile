@@ -20,7 +20,7 @@ WORKDIR $HOME
 # копирование проекта FastAPI в рабочую директорию
 COPY app app
 COPY media media
-COPY requirements.txt alembic.ini .env/ ./
+COPY requirements.txt alembic.ini ./
 
 # обновление pip
 # установка зависимостей из списка requirements.txt

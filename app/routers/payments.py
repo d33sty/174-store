@@ -94,7 +94,7 @@ async def yookassa_webhook(
     if order is None:
         return {"status": "ignored"}
 
-    if order.status in ("paid", "canceled"):
+    if order.status in ("paid", "cancelled"):
         return {"status": "ok"}
 
     if payment.status == "succeeded":
@@ -102,7 +102,7 @@ async def yookassa_webhook(
         order.paid_at = datetime.now(timezone.utc)
         order.payment_id = payment.id
     elif payment.status == "canceled":
-        order.status = "canceled"
+        order.status = "cancelled"
 
     await db.commit()
     return {"status": "ok"}

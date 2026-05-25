@@ -30,3 +30,17 @@ class Review(Base):
     user: Mapped["User"] = relationship("User", back_populates="reviews")
     product: Mapped["Product"] = relationship("Product", back_populates="reviews")
     replies: Mapped[list["Reply"]] = relationship("Reply", back_populates="review")
+
+    @property
+    def display_name(self) -> str | None:
+        try:
+            return self.user.display_name if self.user else None
+        except Exception:
+            return None
+
+    @property
+    def is_admin(self) -> bool:
+        try:
+            return self.user.role == 'admin' if self.user else False
+        except Exception:
+            return False
