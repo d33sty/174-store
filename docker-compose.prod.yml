@@ -37,8 +37,10 @@ services:
       - POSTGRES_DB=${DB_NAME}
 
   nginx:
-    # Собираем образ nginx из локальной директории nginx
-    build: nginx
+    # Собираем образ nginx из корня проекта (нужно для доступа к frontend/ при сборке)
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     volumes:
       - media_data:/var/www/media
       - ./certbot/conf:/etc/letsencrypt
