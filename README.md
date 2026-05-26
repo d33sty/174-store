@@ -1,14 +1,15 @@
-# 174-Store API
+# 174-Store
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.136.0-009688.svg)](https://fastapi.tiangolo.com/)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)](https://www.sqlalchemy.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB.svg)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Site](https://img.shields.io/badge/Сайт-174--store.ru-ff6b35.svg)](http://174-store.ru)
+[![Site](https://img.shields.io/badge/Сайт-174--store.ru-ff6b35.svg)](https://174-store.ru)
 
-REST API интернет-магазина с поддержкой ролей, корзиной, заказами и интеграцией платёжной системы YooKassa.
+Полностековый интернет-магазин: FastAPI-бэкенд + React SPA-фронтенд. Поддерживает роли, корзину, заказы и интеграцию с платёжной системой YooKassa.
 
 ![174 Store Landing](docs/preview.png)
 
@@ -16,21 +17,30 @@ REST API интернет-магазина с поддержкой ролей, �
 
 ## Возможности
 
+### Бэкенд
 - **Аутентификация** — JWT access (30 мин) + refresh (7 дней) токены
-- **Роли пользователей** — buyer, seller, admin с разграниченными правами
+- **Роли пользователей** — `buyer`, `seller`, `admin` с разграниченными правами
 - **Каталог товаров** — полнотекстовый поиск (PostgreSQL, русский язык), фильтрация по цене, категории, наличию, продавцу; пагинация
-- **Иерархические категории** — древовидная структура с parent_id
+- **Иерархические категории** — древовидная структура с `parent_id`
 - **Загрузка изображений** — jpg, png, webp до 2 МБ, хранятся с UUID-именами
 - **Система отзывов** — оценки 1–5, один отзыв на товар, автоматический пересчёт рейтинга
-- **Вложенные ответы на отзывы** — древовидная структура (reply.parent_id)
+- **Вложенные ответы на отзывы** — древовидная структура (`reply.parent_id`)
 - **Корзина** — с проверкой остатков и уникальностью позиций
-- **Заказы** — оформление из корзины, защита от race condition через SELECT FOR UPDATE
+- **Заказы** — оформление из корзины, защита от race condition через `SELECT FOR UPDATE`
 - **Платежи** — интеграция с YooKassa, идемпотентный webhook
-- **CORS** — настраивается через переменные окружения
 - **Мягкое удаление** — через флаг `is_active` для товаров, отзывов, ответов, категорий
-- **Логирование** — loguru с контекстным log_id на каждый запрос
-- **Лендинг** — приветственная страница на корневом эндпоинте `/` со ссылкой на документацию
-- **Продакшн-деплой** — Gunicorn + Uvicorn workers + Nginx в Docker Compose
+- **CORS** — настраивается через переменные окружения
+- **Логирование** — loguru с контекстным `log_id` на каждый запрос
+
+### Фронтенд
+- **SPA на React** — клиентская маршрутизация через React Router
+- **Страницы**: каталог, карточка товара, корзина, оформление заказа, история заказов, профиль, вход/регистрация, панель администратора
+- **Фильтрация и поиск** — по тексту, категории, цене, наличию на каталоге товаров
+- **Отзывы и ответы** — создание, редактирование, удаление (своих); ответ на ответ; бейдж «Продавец» у admin-пользователей
+- **Корзина** — с бейджем количества в навбаре
+- **Оформление заказа** — форма с данными доставки перед переходом к оплате
+- **Профиль** — отображаемое имя, email, номер профиля
+- **Стилизованные модальные окна** — вместо браузерных `confirm()`
 
 ---
 
@@ -50,6 +60,10 @@ REST API интернет-магазина с поддержкой ролей, �
 | Reverse Proxy | Nginx 1.25 |
 | Контейнеризация | Docker + Docker Compose |
 | Логирование | Loguru 0.7.3 |
+| UI Framework | React 19 + React Router 7 |
+| Сборка фронтенда | Vite 8 |
+| Стили | Tailwind CSS v4 |
+| HTTP-клиент | Axios |
 
 ---
 
@@ -58,8 +72,9 @@ REST API интернет-магазина с поддержкой ролей, �
 ### Требования
 
 - Docker и Docker Compose
+- Node.js 20+ (для фронтенда)
 
-### Запуск
+### Бэкенд
 
 ```bash
 git clone https://github.com/d33sty/174-store.git
@@ -67,17 +82,21 @@ cd 174-store
 cp .env.example .env
 # Заполнить .env своими значениями
 docker compose up -d --build
-```
-
-### Применить миграции
-
-```bash
 docker compose exec web alembic upgrade head
 ```
 
-API будет доступен на `http://localhost:8000`.
-
+API доступен на `http://localhost:8000`.  
 Документация: `http://localhost:8000/docs` (Swagger UI), `http://localhost:8000/redoc` (ReDoc).
+
+### Фронтенд
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Фронтенд доступен на `http://localhost:5173`. Запросы к `/api` проксируются на `http://localhost:8000` через встроенный Vite proxy.
 
 ---
 
@@ -91,10 +110,22 @@ docker compose -f docker-compose.prod.yml exec web alembic upgrade head
 ```
 
 В продакшн-конфиге:
+- Nginx собирается через **многоэтапный Docker-образ**: на первом этапе Node.js собирает React (`npm run build`), на втором — итоговый образ Nginx берёт `dist/` и конфиг
 - Gunicorn запускает 4 воркера с UvicornWorker
-- Nginx слушает порт 80 и проксирует запросы на web-контейнер
-- Медиафайлы хранятся в Docker volume `media_data` и раздаются через Nginx по пути `/media/`
+- Nginx слушает порты 80 и 443 (HTTPS через Let's Encrypt / Certbot)
+- HTTP → HTTPS редирект на уровне Nginx
+- Nginx раздаёт React SPA по `/`, API проксирует по `/api/` (срезая префикс), медиафайлы раздаёт напрямую по `/api/media/` из Docker volume
 - Порт 8000 не открыт наружу — только через Nginx
+
+### Пересборка после обновления кода
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml exec web alembic upgrade head
+```
 
 ---
 
@@ -128,11 +159,11 @@ CORS_ORIGINS=http://example.com,https://example.com
 
 | Роль | Права |
 |---|---|
-| **buyer** (по умолчанию) | Просмотр каталога, управление корзиной, оформление заказов, написание отзывов |
+| **buyer** (по умолчанию) | Просмотр каталога, управление корзиной, оформление заказов, написание отзывов и ответов |
 | **seller** | Всё что buyer + создание, редактирование и удаление своих товаров |
-| **admin** | Полный доступ: управление категориями, удаление любых отзывов и ответов |
+| **admin** | Полный доступ: управление категориями и товарами, удаление любых отзывов и ответов |
 
-Роль выбирается при регистрации (`buyer` или `seller`). Роль `admin` назначается вручную через базу данных.
+Роль `admin` назначается вручную через базу данных.
 
 ---
 
@@ -142,8 +173,9 @@ CORS_ORIGINS=http://example.com,https://example.com
 
 | Метод | Путь | Доступ | Описание |
 |---|---|---|---|
-| POST | `/users/` | Все | Регистрация (роль: buyer или seller) |
+| POST | `/users/` | Все | Регистрация |
 | GET | `/users/me` | Авторизован | Данные текущего пользователя |
+| PUT | `/users/me` | Авторизован | Обновить профиль (email, пароль, display_name) |
 | POST | `/users/token` | Все | Вход, получение access + refresh токенов |
 | POST | `/users/refresh-token` | Все | Обновление refresh-токена |
 | POST | `/users/refresh-access` | Все | Получение нового access-токена |
@@ -187,9 +219,9 @@ CORS_ORIGINS=http://example.com,https://example.com
 | Метод | Путь | Доступ | Описание |
 |---|---|---|---|
 | GET | `/reviews/` | Все | Список всех отзывов |
-| POST | `/reviews/` | Buyer | Создать отзыв (один на товар) |
-| PUT | `/reviews/{id}` | Buyer (автор) | Обновить отзыв |
-| DELETE | `/reviews/{id}` | Buyer (автор) / Admin | Мягкое удаление отзыва |
+| POST | `/reviews/` | Авторизован | Создать отзыв (один на товар) |
+| PUT | `/reviews/{id}` | Автор | Обновить отзыв |
+| DELETE | `/reviews/{id}` | Автор / Admin | Мягкое удаление отзыва |
 | GET | `/reviews/{id}/replies` | Все | Ответы под отзывом |
 
 ### Ответы на отзывы `/replies`
@@ -197,9 +229,9 @@ CORS_ORIGINS=http://example.com,https://example.com
 | Метод | Путь | Доступ | Описание |
 |---|---|---|---|
 | GET | `/replies/` | Все | Список всех ответов |
-| POST | `/replies/` | Авторизован | Создать ответ |
-| PUT | `/replies/{id}/` | Авторизован (автор) | Обновить ответ |
-| DELETE | `/replies/{id}/` | Авторизован (автор) / Admin | Мягкое удаление ответа |
+| POST | `/replies/` | Авторизован | Создать ответ (поддерживается `parent_id`) |
+| PUT | `/replies/{id}/` | Автор | Обновить ответ |
+| DELETE | `/replies/{id}/` | Автор / Admin | Мягкое удаление ответа |
 
 ### Корзина `/cart`
 
@@ -215,7 +247,7 @@ CORS_ORIGINS=http://example.com,https://example.com
 
 | Метод | Путь | Доступ | Описание |
 |---|---|---|---|
-| POST | `/orders/checkout` | Авторизован | Оформить заказ из корзины и создать платёж |
+| POST | `/orders/checkout` | Авторизован | Оформить заказ из корзины и создать платёж YooKassa |
 | GET | `/orders/` | Авторизован | Список своих заказов (пагинация) |
 | GET | `/orders/{id}` | Авторизован (свой) | Детали заказа |
 | GET | `/orders/{id}/status` | Авторизован (свой) | Статус оплаты заказа |
@@ -240,8 +272,6 @@ CORS_ORIGINS=http://example.com,https://example.com
 │   ├── db_depends.py        # DI для сессий БД
 │   ├── schemas.py           # Pydantic схемы запросов и ответов
 │   ├── payments.py          # Async обёртка над YooKassa SDK
-│   ├── static/
-│   │   └── index.html       # Лендинг на корневом эндпоинте
 │   ├── models/
 │   │   ├── users.py
 │   │   ├── categories.py
@@ -260,14 +290,25 @@ CORS_ORIGINS=http://example.com,https://example.com
 │   │   ├── orders.py
 │   │   └── payments.py
 │   ├── migrations/          # Alembic миграции
-│   ├── Dockerfile
-│   └── Dockerfile.prod
+│   ├── Dockerfile           # Dev образ
+│   └── Dockerfile.prod      # Prod образ
+├── frontend/
+│   ├── src/
+│   │   ├── api/             # Axios клиент и запросы
+│   │   ├── components/      # Переиспользуемые компоненты (Navbar и др.)
+│   │   ├── context/         # AuthContext, CartContext
+│   │   ├── pages/           # CatalogPage, ProductPage, CartPage, CheckoutPage,
+│   │   │                    # OrdersPage, OrderDetailPage, ProfilePage,
+│   │   │                    # LoginPage, RegisterPage, AdminPage
+│   │   └── App.jsx
+│   ├── vite.config.js       # Dev proxy: /api → localhost:8000
+│   └── package.json
 ├── nginx/
-│   ├── Dockerfile
-│   └── 174-store.conf
-├── media/                   # Загруженные изображения товаров
-├── docker-compose.yml       # Dev окружение
-├── docker-compose.prod.yml  # Prod окружение (Gunicorn + Nginx)
+│   ├── Dockerfile           # Многоэтапный образ: Node.js build → Nginx
+│   └── 174-store.conf       # SPA + API proxy + media + HTTPS
+├── media/                   # Загруженные изображения (dev)
+├── docker-compose.yml       # Dev окружение (бэкенд + БД)
+├── docker-compose.prod.yml  # Prod окружение (Gunicorn + Nginx + Certbot)
 ├── .env.example
 └── alembic.ini
 ```
