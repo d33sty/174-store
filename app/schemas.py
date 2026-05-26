@@ -47,11 +47,11 @@ class ProductCreate(BaseModel):
     name: str = Field(
         ...,
         min_length=3,
-        max_length=100,
-        description="Название товара (3-100 символов)",
+        max_length=255,
+        description="Название товара (3-255 символов)",
     )
     description: str | None = Field(
-        None, max_length=500, description="Описание товара (до 500 символов)"
+        None, max_length=5000, description="Описание товара (до 5000 символов)"
     )
     price: Decimal = Field(
         ..., gt=0, description="Цена товара (больше 0)", decimal_places=2

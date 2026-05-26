@@ -80,7 +80,7 @@ function ProductForm({ initial, categories, onSave, onCancel }) {
           <input
             value={form.name}
             onChange={e => set('name', e.target.value)}
-            required minLength={3} maxLength={100}
+            required minLength={3} maxLength={255}
             placeholder="Название товара"
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
@@ -91,8 +91,8 @@ function ProductForm({ initial, categories, onSave, onCancel }) {
           <textarea
             value={form.description}
             onChange={e => set('description', e.target.value)}
-            maxLength={500}
-            rows={3}
+            maxLength={5000}
+            rows={6}
             placeholder="Описание товара (необязательно)"
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
           />
