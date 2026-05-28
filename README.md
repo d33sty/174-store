@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Site](https://img.shields.io/badge/Сайт-174--store.ru-ff6b35.svg)](https://174-store.ru)
 
-Полностековый интернет-магазин: REST API на FastAPI и SPA-фронтенд на React. Поддерживает каталог с полнотекстовым поиском, корзину, заказы и оплату через YooKassa.
+Полностековый интернет-магазин: REST API на FastAPI и SPA-фронтенд на React. Поддерживает каталог с полнотекстовым поиском, галерею товаров, корзину, заказы с доставкой CDEK и оплату через YooKassa.
 
 ![174 Store Preview](docs/preview.png)
 
@@ -47,6 +47,7 @@
 - **Каталог товаров** — полнотекстовый поиск на русском языке (PostgreSQL tsvector + GIN-индекс), фильтрация по цене, категории, наличию; сортировка; пагинация
 - **Иерархические категории** — древовидная структура с `parent_id`
 - **Загрузка изображений** — jpg, png, webp до 2 МБ, хранятся с UUID-именами
+- **Галерея товаров** — несколько фото на товар с сортировкой по `order`; отдельные эндпоинты добавления и удаления
 - **Отзывы** — только от пользователей с оплаченным заказом на этот товар; оценка 1–5; автоматический пересчёт рейтинга
 - **Вложенные ответы** — ответы на отзывы с поддержкой `parent_id` для вложенности
 - **Корзина** — проверка остатков, уникальность позиций
@@ -58,11 +59,11 @@
 ### Фронтенд
 
 - **Каталог** — поиск, фильтрация по категории и цене, фильтр «в наличии», сортировка
-- **Карточка товара** — галерея, описание, отзывы с ответами, добавление в корзину
-- **Корзина и оформление заказа** — форма с данными доставки, переход к оплате через YooKassa
+- **Карточка товара** — галерея с навигацией стрелками и миниатюрами, описание, отзывы с ответами, добавление в корзину
+- **Корзина и оформление заказа** — форма с выбором доставки (CDEK-виджет для ПВЗ или курьер), переход к оплате через YooKassa
 - **История заказов** — список с пагинацией, детали заказа, отмена pending-заказа
 - **Профиль** — смена email, пароля, отображаемого имени
-- **Панель администратора** — управление товарами и категориями (создание, редактирование, удаление)
+- **Панель администратора** — управление товарами (с галереей) и категориями (создание, редактирование, удаление)
 
 ---
 
@@ -130,10 +131,10 @@ docker compose -f docker-compose.prod.yml exec web alembic upgrade head
 ### Обновление после `git pull`
 
 ```bash
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml build --no-cache
-docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml exec web alembic upgrade head
+git pull
+docker compose -f docker-compose.prod.yml build --no-cache web nginx
+docker compose -f docker-compose.prod.yml run --rm web alembic upgrade head
+docker compose -f docker-compose.prod.yml up -d web nginx
 ```
 
 ---
@@ -196,6 +197,8 @@ CORS_ORIGINS=http://example.com,https://example.com
 | PUT | `/products/{id}` | Admin | Обновить товар |
 | DELETE | `/products/{id}` | Admin | Мягкое удаление |
 | GET | `/products/{id}/reviews/` | Все | Отзывы на товар |
+| POST | `/products/{id}/images` | Admin | Добавить фото в галерею |
+| DELETE | `/products/{id}/images/{image_id}` | Admin | Удалить фото из галереи |
 
 **Query-параметры `GET /products/`:**
 
@@ -271,7 +274,8 @@ CORS_ORIGINS=http://example.com,https://example.com
 │   ├── models/
 │   │   ├── users.py
 │   │   ├── categories.py
-│   │   ├── products.py      # tsvector + GIN-индекс для поиска
+│   │   ├── products.py         # tsvector + GIN-индекс для поиска
+│   │   ├── product_images.py   # Галерея товаров
 │   │   ├── reviews.py
 │   │   ├── replies.py
 │   │   ├── cart_items.py
