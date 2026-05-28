@@ -33,7 +33,9 @@ async def _load_order_with_items(db: AsyncSession, order_id: int) -> OrderModel 
     result = await db.scalars(
         select(OrderModel)
         .options(
-            selectinload(OrderModel.items).selectinload(OrderItemModel.product),
+            selectinload(OrderModel.items)
+            .selectinload(OrderItemModel.product)
+            .selectinload(ProductModel.images),
         )
         .where(OrderModel.id == order_id)
     )
@@ -174,7 +176,11 @@ async def list_orders(
     )
     result = await db.scalars(
         select(OrderModel)
-        .options(selectinload(OrderModel.items).selectinload(OrderItemModel.product))
+        .options(
+            selectinload(OrderModel.items)
+            .selectinload(OrderItemModel.product)
+            .selectinload(ProductModel.images)
+        )
         .where(OrderModel.user_id == current_user.id)
         .order_by(OrderModel.created_at.desc())
         .offset((page - 1) * page_size)
