@@ -18,6 +18,7 @@ from app.schemas import (
     OrderList,
     OrderCheckoutResponse,
     OrderChekoutConfirmation,
+    CheckoutRequest,
 )
 
 CANCELLABLE_STATUSES = {"pending"}
@@ -45,6 +46,7 @@ async def _load_order_with_items(db: AsyncSession, order_id: int) -> OrderModel 
     status_code=status.HTTP_201_CREATED,
 )
 async def checkout_order(
+    payload: CheckoutRequest = CheckoutRequest(),
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -73,7 +75,12 @@ async def checkout_order(
     )
     products = {p.id: p for p in products_result.scalars().all()}
 
-    order = OrderModel(user_id=current_user.id)
+    order = OrderModel(
+        user_id=current_user.id,
+        delivery_type=payload.delivery_type,
+        delivery_pvz_code=payload.delivery_pvz_code,
+        delivery_address=payload.delivery_address,
+    )
     total_amount = Decimal("0")
 
     for cart_item in cart_items:

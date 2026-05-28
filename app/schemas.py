@@ -275,8 +275,17 @@ class Order(BaseModel):
     created_at: datetime = Field(..., description="Когда заказ был создан")
     updated_at: datetime | None = Field(description="Когда последний раз обновлялся")
     items: list[OrderItem] = Field(default_factory=list, description="Список позиций")
+    delivery_type: str | None = Field(None)
+    delivery_pvz_code: str | None = Field(None)
+    delivery_address: str | None = Field(None)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CheckoutRequest(BaseModel):
+    delivery_type: str | None = None
+    delivery_pvz_code: str | None = None
+    delivery_address: str | None = None
 
 
 class OrderList(BaseModel):

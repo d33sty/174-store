@@ -104,7 +104,7 @@ export default function ProfilePage() {
   if (loading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-enter">
       <Navbar />
       <main className="max-w-lg mx-auto px-4 py-8">
 

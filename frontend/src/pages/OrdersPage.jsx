@@ -61,7 +61,7 @@ export default function OrdersPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-enter">
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 py-8">
 
@@ -111,7 +111,7 @@ export default function OrdersPage() {
                         day: 'numeric', month: 'long', year: 'numeric',
                       })}
                     </span>
-                    <span>{pluralItems(order.items.length)}</span>
+                    <span>{pluralItems(order.items.reduce((sum, i) => sum + i.quantity, 0))}</span>
                   </div>
                 </Link>
               ))}

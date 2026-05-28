@@ -27,6 +27,9 @@ class Order(Base):
     payment_id: Mapped[str | None] = mapped_column(
         String(64), unique=True, nullable=True
     )
+    delivery_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    delivery_pvz_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    delivery_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     paid_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

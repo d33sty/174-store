@@ -10,6 +10,7 @@ from app.routers import (
     cart,
     orders,
     payments,
+    delivery,
 )
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
@@ -71,6 +72,7 @@ app.include_router(replies.router)
 app.include_router(cart.router)
 app.include_router(orders.router)
 app.include_router(payments.router)
+app.include_router(delivery.router)
 
 
 app.mount("/media", StaticFiles(directory="media"), name="media")

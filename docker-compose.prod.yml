@@ -3,32 +3,22 @@ name: fastapi-ecommerce-prod
 services:
   web:
     build:
-      # Указываем контекст сборки - текущую директорию проекта
       context: .
-      # Используем Dockerfile.prod из директории app
       dockerfile: ./app/Dockerfile.prod
     env_file:
       - .env
     environment:
       - DB_HOST=db
-    # Запускаем ASGI-приложение через сервер приложений Gunicorn с воркерами Uvicorn
     command: gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
     volumes:
       - media_data:/home/fast/media
-    # Порт не пробрасываем наружу - доступ осуществляется через контейнер nginx
-    # ports:
-    #  - 8000:8000
-    # Запускаем контейнер после старта контейнера базы данных
     depends_on:
       - db
 
   db:
-    # Используем официальный образ PostgreSQL версии 16
     image: postgres:16
-    # Монтируем том postgres_data в /var/lib/postgresql/data контейнера для хранения данных БД
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Задаём переменные окружения для инициализации БД и пользователя
     env_file:
       - .env
     environment:
@@ -37,10 +27,14 @@ services:
       - POSTGRES_DB=${DB_NAME}
 
   nginx:
-    # Собираем образ nginx из корня проекта (нужно для доступа к frontend/ при сборке)
     build:
       context: .
       dockerfile: nginx/Dockerfile
+      args:
+        - VITE_YANDEX_MAPS_API_KEY=${VITE_YANDEX_MAPS_API_KEY}
+        - VITE_OWNER_NAME=${VITE_OWNER_NAME}
+        - VITE_OWNER_PHONE=${VITE_OWNER_PHONE}
+        - VITE_OWNER_INN=${VITE_OWNER_INN}
     volumes:
       - media_data:/var/www/media
       - ./certbot/conf:/etc/letsencrypt
@@ -48,7 +42,6 @@ services:
     ports:
       - 80:80
       - 443:443
-    # Запускаем контейнер после старта контейнера web-приложения
     depends_on:
       - web
 
@@ -57,13 +50,10 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    # --keep-until-expiring: не трогать сертификат если он ещё актуален
     command: certonly --webroot --webroot-path=/var/www/certbot/ --email distortion616@gmail.com --agree-tos --no-eff-email --keep-until-expiring -d 174-store.ru
     depends_on:
       - nginx
 
 volumes:
-  # Определяем том для хранения данных БД
   postgres_data:
-  # Определяем том для хранения медиафайлов
   media_data:

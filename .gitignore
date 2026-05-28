@@ -312,3 +312,7 @@ env/
 ENV/
 env.bak/
 venv.bak/
+
+
+# dumps
+dump.sql

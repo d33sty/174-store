@@ -22,6 +22,24 @@ services:
     depends_on:
       - db
 
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - 5173:5173
+    environment:
+      - API_TARGET=http://web:8000
+      - VITE_YANDEX_MAPS_API_KEY=${VITE_YANDEX_MAPS_API_KEY}
+      - VITE_OWNER_NAME=${VITE_OWNER_NAME}
+      - VITE_OWNER_PHONE=${VITE_OWNER_PHONE}
+      - VITE_OWNER_INN=${VITE_OWNER_INN}
+    command: sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      - web
+
   db:
     # Используем официальный образ PostgreSQL версии 16
     image: postgres:16
@@ -35,5 +53,5 @@ services:
       - POSTGRES_DB=${DB_NAME}
 
 volumes:
-  # Определяем том для хранения данных БД
   postgres_data:
+  frontend_node_modules:

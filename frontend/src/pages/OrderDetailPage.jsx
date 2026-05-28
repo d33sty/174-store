@@ -66,7 +66,7 @@ export default function OrderDetailPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 page-enter">
         <Navbar />
         <div className="max-w-3xl mx-auto px-4 py-24 text-center">
           <p className="text-gray-400 mb-4">Заказ не найден</p>
@@ -77,7 +77,7 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-enter">
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 py-8">
 

@@ -445,6 +445,7 @@ export default function ProductPage() {
   const [qty, setQty] = useState(1)
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
+  const [descExpanded, setDescExpanded] = useState(false)
 
   const [grade, setGrade] = useState(5)
   const [comment, setComment] = useState('')
@@ -515,7 +516,7 @@ export default function ProductPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 page-enter">
         <Navbar />
         <main className="max-w-5xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-pulse">
@@ -534,7 +535,7 @@ export default function ProductPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 page-enter">
         <Navbar />
         <main className="max-w-5xl mx-auto px-4 py-20 text-center">
           <p className="text-lg text-gray-400">Товар не найден</p>
@@ -547,7 +548,7 @@ export default function ProductPage() {
   const rating = Math.round(Number(product.rating))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-enter">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-8">
 
@@ -599,7 +600,19 @@ export default function ProductPage() {
 
               {/* Описание */}
               {product.description && (
-                <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
+                <div>
+                  <p className={`text-sm text-gray-600 leading-relaxed ${!descExpanded && product.description.length > 300 ? 'line-clamp-5' : ''}`}>
+                    {product.description}
+                  </p>
+                  {product.description.length > 300 && (
+                    <button
+                      onClick={() => setDescExpanded(e => !e)}
+                      className="text-xs text-green-600 hover:text-green-700 mt-1 transition-colors"
+                    >
+                      {descExpanded ? 'Свернуть' : 'Читать далее'}
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* Наличие */}
@@ -645,7 +658,7 @@ export default function ProductPage() {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Отзывы</h2>
 
           {/* Форма нового отзыва */}
-          {user ? (
+          {user && !reviews.some(r => r.user_id === user.id) ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
               <p className="text-sm font-medium text-gray-700 mb-3">Оставить отзыв</p>
               <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3">
@@ -673,13 +686,13 @@ export default function ProductPage() {
                 </button>
               </form>
             </div>
-          ) : (
+          ) : !user ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4 text-center">
               <p className="text-sm text-gray-500">
                 <Link to="/login" className="text-green-600 hover:underline">Войдите</Link>, чтобы оставить отзыв
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Список отзывов */}
           {reviews.length === 0 ? (

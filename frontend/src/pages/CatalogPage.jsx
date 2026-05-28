@@ -124,6 +124,7 @@ export default function CatalogPage() {
   const [categories, setCategories] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(false)
 
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
@@ -142,14 +143,15 @@ export default function CatalogPage() {
     }
   }, [location.state, navigate])
 
-  const PAGE_SIZE = 20
+  const PAGE_SIZE = 8
 
   useEffect(() => {
     client.get('/categories/').then(r => setCategories(r.data))
   }, [])
 
   const fetchProducts = useCallback(async () => {
-    setLoading(true)
+    if (products.length === 0) setLoading(true)
+    else setFetching(true)
     try {
       const params = {
         page,
@@ -163,6 +165,7 @@ export default function CatalogPage() {
       setTotal(data.total)
     } finally {
       setLoading(false)
+      setFetching(false)
     }
   }, [page, categoryId, search, sort])
 
@@ -184,7 +187,7 @@ export default function CatalogPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-enter">
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
@@ -288,38 +291,59 @@ export default function CatalogPage() {
                   </div>
                 ))}
               </div>
-            ) : products.length === 0 ? (
+            ) : products.length === 0 && !fetching ? (
               <div className="text-center py-20 text-gray-400">
                 <p className="text-lg">Товары не найдены</p>
                 {search && <p className="text-sm mt-1">Попробуйте изменить запрос</p>}
               </div>
             ) : (
-              <>
+              <div className={`transition-opacity duration-150 ${fetching ? 'opacity-50' : 'opacity-100'}`}>
                 <p className="text-sm text-gray-400 mb-4">{total} {total === 1 ? 'товар' : 'товаров'}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {products.map(p => <ProductCard key={p.id} product={p} />)}
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-8">
+                  <div className="flex justify-center items-center gap-1 mt-8">
                     <button
                       onClick={() => setPage(p => p - 1)}
                       disabled={page === 1}
-                      className="px-4 py-2 rounded-xl border border-gray-200 text-sm bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                      className="px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
                     >
                       ←
                     </button>
-                    <span className="px-4 py-2 text-sm text-gray-600">{page} / {totalPages}</span>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                      .reduce((acc, p, i, arr) => {
+                        if (i > 0 && p - arr[i - 1] > 1) acc.push('...')
+                        acc.push(p)
+                        return acc
+                      }, [])
+                      .map((p, i) =>
+                        p === '...'
+                          ? <span key={`dots-${i}`} className="px-2 py-2 text-sm text-gray-400">…</span>
+                          : <button
+                              key={p}
+                              onClick={() => setPage(p)}
+                              className={`w-9 h-9 rounded-xl text-sm transition-colors ${
+                                p === page
+                                  ? 'bg-green-600 text-white font-medium'
+                                  : 'border border-gray-200 bg-white hover:bg-gray-50 text-gray-600'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                      )}
                     <button
                       onClick={() => setPage(p => p + 1)}
                       disabled={page === totalPages}
-                      className="px-4 py-2 rounded-xl border border-gray-200 text-sm bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                      className="px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
                     >
                       →
                     </button>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
