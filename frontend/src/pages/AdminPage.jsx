@@ -37,6 +37,10 @@ function ProductForm({ initial, categories, onSave, onCancel }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const [gallery, setGallery] = useState(initial?.images || [])
+  const [pendingFiles, setPendingFiles] = useState([])
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }))
   }
@@ -57,12 +61,51 @@ function ProductForm({ initial, categories, onSave, onCancel }) {
       const res = initial
         ? await client.put(`/products/${initial.id}`, data)
         : await client.post('/products/', data)
-      onSave(res.data)
+
+      const productId = res.data.id
+      let uploadedImages = [...gallery]
+      for (const file of pendingFiles) {
+        const fd = new FormData()
+        fd.append('image', file)
+        const imgRes = await client.post(`/products/${productId}/images`, fd)
+        uploadedImages = [...uploadedImages, imgRes.data]
+      }
+      onSave({ ...res.data, images: uploadedImages })
     } catch (err) {
       if (err.response?.status === 400) setError(err.response.data?.detail || 'Ошибка валидации')
       else setError('Не удалось сохранить товар')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleGalleryUpload(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    if (initial) {
+      setUploadingGallery(true)
+      try {
+        const data = new FormData()
+        data.append('image', file)
+        const res = await client.post(`/products/${initial.id}/images`, data)
+        setGallery(prev => [...prev, res.data])
+      } catch {
+        setError('Не удалось загрузить фото галереи')
+      } finally {
+        setUploadingGallery(false)
+      }
+    } else {
+      setPendingFiles(prev => [...prev, file])
+    }
+  }
+
+  async function handleGalleryDelete(imageId) {
+    try {
+      await client.delete(`/products/${initial.id}/images/${imageId}`)
+      setGallery(prev => prev.filter(img => img.id !== imageId))
+    } catch {
+      setError('Не удалось удалить фото')
     }
   }
 
@@ -146,15 +189,50 @@ function ProductForm({ initial, categories, onSave, onCancel }) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-500">
-            Изображение {initial?.image_url ? '(загружено — выберите новое для замены)' : ''}
-          </label>
+          <label className="text-xs font-medium text-gray-500">Главное фото</label>
+          {initial?.image_url && !image && (
+            <img src={`/api${initial.image_url}`} className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+          )}
+          {image && (
+            <img src={URL.createObjectURL(image)} className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+          )}
           <input
             type="file" accept="image/jpeg,image/png,image/webp"
             onChange={e => setImage(e.target.files[0] || null)}
             className="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200 cursor-pointer"
           />
           <p className="text-xs text-gray-400">JPG, PNG или WebP · до 2 МБ · рекомендуется квадрат 1:1</p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <label className="text-xs font-medium text-gray-500">Галерея</label>
+          <div className="flex flex-wrap gap-2">
+            {gallery.map(img => (
+              <div key={img.id} className="relative group w-16 h-16">
+                <img src={`/api${img.image_url}`} className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+                <button
+                  type="button"
+                  onClick={() => handleGalleryDelete(img.id)}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs items-center justify-center hidden group-hover:flex"
+                >×</button>
+              </div>
+            ))}
+            {pendingFiles.map((file, i) => (
+              <div key={i} className="relative group w-16 h-16">
+                <img src={URL.createObjectURL(file)} className="w-16 h-16 object-cover rounded-lg border border-gray-200 opacity-70" />
+                <button
+                  type="button"
+                  onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs items-center justify-center hidden group-hover:flex"
+                >×</button>
+              </div>
+            ))}
+            <label className={`w-16 h-16 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 cursor-pointer hover:border-green-400 transition-colors ${uploadingGallery ? 'opacity-50' : ''}`}>
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleGalleryUpload} disabled={uploadingGallery} />
+              <span className="text-2xl text-gray-300">+</span>
+            </label>
+          </div>
+          <p className="text-xs text-gray-400">Наведите на фото чтобы удалить</p>
         </div>
 
         {error && (
@@ -602,6 +680,7 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
     </div>
   )
 }

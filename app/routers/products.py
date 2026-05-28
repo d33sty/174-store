@@ -19,11 +19,13 @@ from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
 from app.models.reviews import Review as ReviewModel
 from app.models.replies import Reply as ReplyModel
+from app.models.product_images import ProductImage as ProductImageModel
 from app.schemas import (
     Product as ProductSchema,
     ProductCreate,
     Review as ReviewResponseSchema,
     ProductList,
+    ProductImage as ProductImageSchema,
 )
 from app.db_depends import get_async_db
 
@@ -160,6 +162,7 @@ async def get_all_products(
             .order_by(*order_clause)
             .offset((page - 1) * page_size)
             .limit(page_size)
+            .options(selectinload(ProductModel.images))
         )
         result = await db.execute(products_stmt)
         rows = result.all()
@@ -175,6 +178,7 @@ async def get_all_products(
             .order_by(*order_clause)
             .offset((page - 1) * page_size)
             .limit(page_size)
+            .options(selectinload(ProductModel.images))
         )
         items = (await db.scalars(products_stmt)).all()
 
@@ -220,8 +224,10 @@ async def create_product(
 
     db.add(db_product)
     await db.commit()
-    await db.refresh(db_product)
-    return db_product
+    created = await db.scalar(
+        select(ProductModel).where(ProductModel.id == db_product.id).options(selectinload(ProductModel.images))
+    )
+    return created
 
 
 @router.get(
@@ -245,8 +251,10 @@ async def get_products_by_category(
             status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
         )
 
-    stmt = select(ProductModel).where(
-        ProductModel.is_active == True, ProductModel.category_id == category_id
+    stmt = (
+        select(ProductModel)
+        .where(ProductModel.is_active == True, ProductModel.category_id == category_id)
+        .options(selectinload(ProductModel.images))
     )
     db_products_result = await db.scalars(stmt)
     db_products = db_products_result.all()
@@ -264,8 +272,10 @@ async def get_product(
     """
     Возвращает детальную информацию о товаре по его ID.
     """
-    stmt = select(ProductModel).where(
-        ProductModel.is_active == True, ProductModel.id == product_id
+    stmt = (
+        select(ProductModel)
+        .where(ProductModel.is_active == True, ProductModel.id == product_id)
+        .options(selectinload(ProductModel.images))
     )
     db_product_result = await db.scalars(stmt)
     db_product = db_product_result.first()
@@ -275,6 +285,52 @@ async def get_product(
         )
 
     return db_product
+
+
+@router.post("/{product_id}/images", response_model=ProductImageSchema, status_code=status.HTTP_201_CREATED)
+async def add_product_image(
+    product_id: int,
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_admin),
+):
+    result = await db.scalars(
+        select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
+    )
+    if not result.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    max_order = await db.scalar(
+        select(func.max(ProductImageModel.order)).where(ProductImageModel.product_id == product_id)
+    )
+    image_url = await save_product_image(image)
+    db_image = ProductImageModel(product_id=product_id, image_url=image_url, order=(max_order or 0) + 1)
+    db.add(db_image)
+    await db.commit()
+    await db.refresh(db_image)
+    return db_image
+
+
+@router.delete("/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_image(
+    product_id: int,
+    image_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_admin),
+):
+    result = await db.scalars(
+        select(ProductImageModel).where(
+            ProductImageModel.id == image_id,
+            ProductImageModel.product_id == product_id,
+        )
+    )
+    db_image = result.first()
+    if not db_image:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+
+    remove_product_image(db_image.image_url)
+    await db.delete(db_image)
+    await db.commit()
 
 
 @router.put("/{product_id}", response_model=ProductSchema)
@@ -316,8 +372,10 @@ async def update_product(
         db_product.image_url = await save_product_image(image)
 
     await db.commit()
-    await db.refresh(db_product)
-    return db_product
+    updated = await db.scalar(
+        select(ProductModel).where(ProductModel.id == product_id).options(selectinload(ProductModel.images))
+    )
+    return updated
 
 
 @router.delete("/{product_id}", response_model=ProductSchema)

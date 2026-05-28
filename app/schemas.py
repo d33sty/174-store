@@ -79,6 +79,14 @@ class ProductCreate(BaseModel):
         )
 
 
+class ProductImage(BaseModel):
+    id: int
+    image_url: str
+    order: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class Product(BaseModel):
     """
     Модель для ответа с данными товара.
@@ -96,6 +104,7 @@ class Product(BaseModel):
     created_at: datetime = Field(description="Дата создания товара")
     updated_at: datetime | None = Field(description="Дата последнего изменения товара")
     is_active: bool = Field(..., description="Активность товара")
+    images: list[ProductImage] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
