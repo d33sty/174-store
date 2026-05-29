@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import client from '../api/client'
@@ -36,19 +36,24 @@ export default function OrdersPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loadingOrders, setLoadingOrders] = useState(true)
+  const [fetchingOrders, setFetchingOrders] = useState(false)
+  const initialLoadDone = useRef(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/login', { state: { from: '/orders' } })
   }, [user, loading, navigate])
 
   const fetchOrders = useCallback(async () => {
-    setLoadingOrders(true)
+    if (!initialLoadDone.current) setLoadingOrders(true)
+    else setFetchingOrders(true)
     try {
       const { data } = await client.get('/orders/', { params: { page, page_size: PAGE_SIZE } })
       setOrders(data.items)
       setTotal(data.total)
     } finally {
+      initialLoadDone.current = true
       setLoadingOrders(false)
+      setFetchingOrders(false)
     }
   }, [page])
 
@@ -89,7 +94,7 @@ export default function OrdersPage() {
           </div>
         ) : (
           <>
-            <div className="space-y-3">
+            <div className={`space-y-3 transition-opacity duration-150 ${fetchingOrders ? 'opacity-50' : 'opacity-100'}`}>
               {orders.map(order => (
                 <Link
                   key={order.id}
