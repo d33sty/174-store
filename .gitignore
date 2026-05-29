@@ -179,6 +179,7 @@ $RECYCLE.BIN/
 
 # Claude
 .claude/
+CLAUDE.md
 
 # Docker
 *.tar.gz

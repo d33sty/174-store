@@ -408,8 +408,12 @@ async def delete_product(
     )
 
     await db.commit()
-    await db.refresh(product)
-    return product
+    refreshed = await db.scalar(
+        select(ProductModel)
+        .where(ProductModel.id == product_id)
+        .options(selectinload(ProductModel.images))
+    )
+    return refreshed
 
 
 @router.get(

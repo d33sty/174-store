@@ -496,7 +496,7 @@ export default function AdminPage() {
               />
             )}
 
-            {loadingProducts ? (
+            {loadingProducts && products.length === 0 ? (
               <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="h-14 bg-white rounded-xl border border-gray-100 animate-pulse" />
@@ -610,7 +610,7 @@ export default function AdminPage() {
               />
             )}
 
-            {loadingCategories ? (
+            {loadingCategories && categories.length === 0 ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-12 bg-white rounded-xl border border-gray-100 animate-pulse" />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import client from '../api/client'
@@ -131,6 +131,7 @@ export default function CatalogPage() {
   const [categoryId, setCategoryId] = useState('')
   const [sort, setSort] = useState('rating_desc')
   const [page, setPage] = useState(1)
+  const initialLoadDone = useRef(false)
 
   useEffect(() => {
     if (location.state?.reset) {
@@ -150,7 +151,7 @@ export default function CatalogPage() {
   }, [])
 
   const fetchProducts = useCallback(async () => {
-    if (products.length === 0) setLoading(true)
+    if (!initialLoadDone.current) setLoading(true)
     else setFetching(true)
     try {
       const params = {
@@ -164,6 +165,7 @@ export default function CatalogPage() {
       setProducts(data.items)
       setTotal(data.total)
     } finally {
+      initialLoadDone.current = true
       setLoading(false)
       setFetching(false)
     }
