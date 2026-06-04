@@ -5,11 +5,7 @@ from uuid import uuid4  # Для уникального idempotence_key (пре�
 from anyio import to_thread  # Для запуска синхронного кода в async (FastAPI)
 from yookassa import Configuration, Payment  # библиотека YooKassa
 
-from app.config import (  # Импорт настроек
-    YOOKASSA_RETURN_URL,
-    YOOKASSA_SECRET_KEY,
-    YOOKASSA_SHOP_ID,
-)
+from app.config import settings
 
 
 async def create_yookassa_payment(  # Асинхронная функция (для FastAPI)
@@ -23,12 +19,12 @@ async def create_yookassa_payment(  # Асинхронная функция (д�
 ]:  # Возврат: {'id': '...', 'status': '...', 'confirmation_url': '...'}
 
     # 1. Проверка настроек (fallback на ошибку)
-    if not YOOKASSA_SHOP_ID or not YOOKASSA_SECRET_KEY:
-        raise RuntimeError("Задайте YOOKASSA_SHOP_ID и YOOKASSA_SECRET_KEY в .env")
+    if not settings.yookassa_shop_id or not settings.yookassa_secret_key:
+        raise RuntimeError("Задайте settings.yookassa_shop_id и settings.yookassa_secret_key в .env")
 
     # 2. Глобальная настройка SDK (Basic Auth под капотом)
-    Configuration.account_id = YOOKASSA_SHOP_ID
-    Configuration.secret_key = YOOKASSA_SECRET_KEY
+    Configuration.account_id = settings.yookassa_shop_id
+    Configuration.secret_key = settings.yookassa_secret_key
 
     # 3. ФОРМИРОВАНИЕ PAYLOAD — ГЛАВНАЯ ЧАСТЬ!
     # Это JSON для POST /v3/payments.
@@ -39,7 +35,7 @@ async def create_yookassa_payment(  # Асинхронная функция (д�
         },
         "confirmation": {  # Как подтвердить платеж
             "type": "redirect",  # Пользователь редиректится на форму YooKassa
-            "return_url": YOOKASSA_RETURN_URL,  # Куда вернуть после оплаты
+            "return_url": settings.yookassa_return_url,  # Куда вернуть после оплаты
         },
         "capture": True,  # Авто-списание денег после авторизации
         "description": description,  # Видно пользователю в истории

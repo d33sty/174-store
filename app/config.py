@@ -1,16 +1,36 @@
-import os
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
-YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
-YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
-YOOKASSA_RETURN_URL = os.getenv("YOOKASSA_RETURN_URL", "http://localhost:8000/")
 
-CDEK_CLIENT_ID = os.getenv("CDEK_CLIENT_ID", "wqGwiQx0gg8mLtiEKsIo0Cs1DgNNFVzA")
-CDEK_CLIENT_SECRET = os.getenv("CDEK_CLIENT_SECRET", "RmAmgvSgSl1yirlz9QupbzOJVqhCxcP5")
-CDEK_API_URL = os.getenv("CDEK_API_URL", "https://api.edu.cdek.ru")
+class Settings(BaseSettings):
+    # JWT
+    secret_key: str = ""
+    algorithm: str = "HS256"
 
-_raw_origins = os.getenv("CORS_ORIGINS", "")
-CORS_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+    # Database
+    db_user: str = "postgres"
+    db_pass: str = ""
+    db_host: str = "localhost"
+    db_port: str = "5432"
+    db_name: str = "postgres"
+
+    # YooKassa
+    yookassa_shop_id: str = ""
+    yookassa_secret_key: str = ""
+    yookassa_return_url: str = "http://localhost:8000/"
+
+    # CDEK
+    cdek_client_id: str = "wqGwiQx0gg8mLtiEKsIo0Cs1DgNNFVzA"
+    cdek_client_secret: str = "RmAmgvSgSl1yirlz9QupbzOJVqhCxcP5"
+    cdek_api_url: str = "https://api.edu.cdek.ru"
+
+    # CORS (comma-separated string, parsed to list at usage site)
+    cors_origins: str = ""
+
+    @property
+    def database_url(self) -> str:
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_pass}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+
+settings = Settings()

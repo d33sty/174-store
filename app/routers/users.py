@@ -13,7 +13,7 @@ from app.auth import (
     create_refresh_token,
     get_current_user,
 )
-from app.config import SECRET_KEY, ALGORITHM
+from app.config import settings
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -134,7 +134,7 @@ async def refresh_token(
     old_refresh_token = body.refresh_token
 
     try:
-        payload = jwt.decode(old_refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(old_refresh_token, settings.secret_key, algorithms=[settings.algorithm])
         email: str | None = payload.get("sub")
         token_type: str | None = payload.get("token_type")
 
@@ -184,7 +184,7 @@ async def access_tocken_by_refresh(
     refresh_token = body.refresh_token
 
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(refresh_token, settings.secret_key, algorithms=[settings.algorithm])
         email: str | None = payload.get("sub")
         token_type: str | None = payload.get("token_type")
 

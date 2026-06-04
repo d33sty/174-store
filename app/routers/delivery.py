@@ -5,7 +5,7 @@ import requests as req
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app.config import CDEK_API_URL, CDEK_CLIENT_ID, CDEK_CLIENT_SECRET
+from app.config import settings
 
 router = APIRouter(prefix="/delivery", tags=["delivery"])
 
@@ -24,11 +24,11 @@ def _fetch_cdek_token() -> str:
         return _token_cache["token"]
 
     r = req.post(
-        f"{CDEK_API_URL}/v2/oauth/token",
+        f"{settings.cdek_api_url}/v2/oauth/token",
         data={
             "grant_type": "client_credentials",
-            "client_id": CDEK_CLIENT_ID,
-            "client_secret": CDEK_CLIENT_SECRET,
+            "client_id": settings.cdek_client_id,
+            "client_secret": settings.cdek_client_secret,
         },
         timeout=10,
     )
@@ -59,7 +59,7 @@ async def cdek_proxy(request: Request):
     else:
         return JSONResponse({"error": "no action or url"}, status_code=400)
 
-    full_url = f"{CDEK_API_URL}/{endpoint}"
+    full_url = f"{settings.cdek_api_url}/{endpoint}"
 
     if request.method == "POST":
         raw_body = await request.body()
