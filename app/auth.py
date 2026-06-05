@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.users import User as UserModel
-from app.config import settings
+from app.config import get_settings
 from app.db_depends import get_async_db
 
 # Контекст для хеширования с использованием bcrypt
@@ -44,7 +44,9 @@ def create_access_token(data: dict):
             "token_type": "access",
         }
     )
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return jwt.encode(
+        to_encode, get_settings().secret_key, algorithm=get_settings().algorithm
+    )
 
 
 def create_refresh_token(data: dict):
@@ -59,7 +61,9 @@ def create_refresh_token(data: dict):
             "token_type": "refresh",
         }
     )
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return jwt.encode(
+        to_encode, get_settings().secret_key, algorithm=get_settings().algorithm
+    )
 
 
 async def get_current_user(
@@ -74,7 +78,9 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            token, get_settings().secret_key, algorithms=[get_settings().algorithm]
+        )
         email: str | None = payload.get("sub")
         token_type: str | None = payload.get("token_type")
         if email is None or token_type != "access":

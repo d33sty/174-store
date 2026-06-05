@@ -2,10 +2,10 @@ import asyncio
 import time
 
 import requests as req
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
-from app.config import settings
+from app.config import Settings, get_settings
 
 router = APIRouter(prefix="/delivery", tags=["delivery"])
 
@@ -19,7 +19,7 @@ ACTION_MAP = {
 }
 
 
-def _fetch_cdek_token() -> str:
+def _fetch_cdek_token(settings: Settings) -> str:
     if _token_cache["token"] and time.time() < _token_cache["expires_at"]:
         return _token_cache["token"]
 
@@ -42,8 +42,11 @@ def _fetch_cdek_token() -> str:
 
 @router.get("/cdek/proxy")
 @router.post("/cdek/proxy")
-async def cdek_proxy(request: Request):
-    token = await asyncio.to_thread(_fetch_cdek_token)
+async def cdek_proxy(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+):
+    token = await asyncio.to_thread(_fetch_cdek_token, settings)
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     params = dict(request.query_params)

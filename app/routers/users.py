@@ -13,7 +13,7 @@ from app.auth import (
     create_refresh_token,
     get_current_user,
 )
-from app.config import settings
+from app.config import Settings, get_settings
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -76,8 +76,10 @@ async def update_current_user(
     if body.password:
         current_user.hashed_password = hash_password(body.password)
 
-    if 'display_name' in body.model_fields_set:
-        current_user.display_name = body.display_name.strip() if body.display_name else None
+    if "display_name" in body.model_fields_set:
+        current_user.display_name = (
+            body.display_name.strip() if body.display_name else None
+        )
 
     await db.commit()
     await db.refresh(current_user)
@@ -121,6 +123,7 @@ async def login(
 async def refresh_token(
     body: RefreshTokenRequest,
     db: AsyncSession = Depends(get_async_db),
+    settings: Settings = Depends(get_settings),
 ):
     """
     Обновляет refresh-токен, принимая старый refresh-токен в теле запроса.
@@ -134,7 +137,9 @@ async def refresh_token(
     old_refresh_token = body.refresh_token
 
     try:
-        payload = jwt.decode(old_refresh_token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            old_refresh_token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         email: str | None = payload.get("sub")
         token_type: str | None = payload.get("token_type")
 
@@ -170,7 +175,9 @@ async def refresh_token(
 
 @router.post("/refresh-access")
 async def access_tocken_by_refresh(
-    body: RefreshTokenRequest, db: AsyncSession = Depends(get_async_db)
+    body: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_async_db),
+    settings: Settings = Depends(get_settings),
 ) -> dict:
     """
     Обновляет refresh-токен, принимая старый refresh-токен в теле запроса.
@@ -184,7 +191,9 @@ async def access_tocken_by_refresh(
     refresh_token = body.refresh_token
 
     try:
-        payload = jwt.decode(refresh_token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            refresh_token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         email: str | None = payload.get("sub")
         token_type: str | None = payload.get("token_type")
 

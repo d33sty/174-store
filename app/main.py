@@ -17,7 +17,7 @@ from uuid import uuid4
 from fastapi.responses import JSONResponse
 
 from loguru import logger
-from app.config import settings
+from app.config import get_settings
 
 logger.add(
     "info.log",
@@ -36,7 +36,9 @@ app = FastAPI(
 # и перехватывать preflight OPTIONS до логирования
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_origins=[
+        o.strip() for o in get_settings().cors_origins.split(",") if o.strip()
+    ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
