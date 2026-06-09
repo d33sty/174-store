@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, model_validator
 from decimal import Decimal
 from datetime import datetime
 from typing import Annotated
@@ -132,12 +132,11 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, description="Пароль (минимум 8 символов)")
     password_confirm: str = Field(min_length=8, description="Подтверждение пароля")
 
-    @field_validator("password_confirm")
-    @classmethod
-    def passwords_match(cls, v: str, info: ValidationInfo) -> str:
-        if "password" in info.data and v != info.data["password"]:
+    @model_validator(mode="after")
+    def passwords_match(self) -> "UserCreate":
+        if self.password != self.password_confirm:
             raise ValueError("Пароли не совпадают")
-        return v
+        return self
 
 
 class UserUpdate(BaseModel):
